@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#000000">
+    <meta name="description" content="Car service management application">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Carigar">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/icon-152x152.png">
+    <title>New Customer - Carigar</title>
+    <script>
+        // Initialize dark mode before any rendering
+        if (localStorage.getItem('theme') === 'light') {
+            document.documentElement.classList.remove('dark');
+        } else {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
+    <link rel="stylesheet" href="../assets/css/look.css">
+    <link rel="stylesheet" href="../assets/css/styles.css">
+    <link rel="stylesheet" href="../assets/css/dark-mode.css">
+    <script src="../assets/js/dark-mode-init.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="../assets/js/supabase-config.js"></script>
+    <script src="../assets/js/supabase-db.js"></script>
+    <!-- Temporarily disabled auth middleware for testing -->
+    <!-- <script src="../assets/js/auth-middleware.js"></script> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', async () => {
+                try {
+                    // Unregister any existing service workers first
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for(let registration of registrations) {
+                        await registration.unregister();
+                        console.log('Service worker unregistered');
+                    }
+                    
+                    // Register the new service worker
+                    const registration = await navigator.serviceWorker.register('/sw.js', {
+                        updateViaCache: 'none'
+                    });
+                    console.log('ServiceWorker registration successful');
+                } catch (err) {
+                    console.log('ServiceWorker registration failed: ', err);
+                }
+            });
+        }
+    </script>
+
+</head>
+<body class="flex min-h-screen flex-col">
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col">
+        <!-- Top Navbar -->
+        <div class="top-nav h-16 shadow-md flex items-center px-4 md:px-6 sticky top-0 z-10 relative justify-between md:justify-start hidden md:flex">
+            <div class="flex items-center gap-2">
+                <span class="text-2xl font-semibold gilroy text-black dark:text-white hidden dark:block">Carigar</span>
+            </div>
+            <div class="flex gap-6 items-center ml-10">
+                <a href="index.html" class="nav-icon-btn" title="Home">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7m-9 2v10a1 1 0 001 1h4a1 1 0 001-1V12m-4-2h4" />
+                    </svg>
+                </a>
+                <a href="order.html" class="nav-icon-btn" title="Order">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                </a>
+                <a href="inventory.html" class="nav-icon-btn" title="Inventory">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 13H5v6a2 2 0 002 2h10a2 2 0 002-2v-6m-7-2V3m0 0L9 7m3-4l3 4" />
+                    </svg>
+                </a>
+                <a href="carprofile.html" class="nav-icon-btn" title="Car Profile">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
+                </a>
+            </div>
+            <div class="ml-auto flex gap-2 items-center">
+                <button id="theme-toggle" class="p-2 rounded-lg bg-light-toggle dark:bg-dark-toggle text-light-text dark:text-dark-text hover:bg-light-toggle-hover dark:hover:bg-dark-toggle-hover">
+                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Layout -->
+        <div class="main-container flex-1 flex flex-col px-4 md:px-6 pb-6 gap-6">
+            <div class="content-area w-full flex flex-col gap-6">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-bold mb-6 text-gray-900 dark:text-white">New Customer</h2>
+                    <form id="customerForm" class="space-y-6">
+                        <!-- Customer Information -->
+                        <div class="section">
+                            <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Customer Information</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label for="fullName" class="block mb-2 text-sm font-medium">Full Name *</label>
+                                    <input type="text" id="fullName" name="fullName" required class="w-full p-3 border rounded-lg">
+                                </div>
+                                <div>
+                                    <label for="mobileNumber" class="block mb-2 text-sm font-medium">Mobile Number *</label>
+                                    <input type="tel" id="mobileNumber" name="mobileNumber" required class="w-full p-3 border rounded-lg">
+                                </div>
+                                <div>
+                                    <label for="emailId" class="block mb-2 text-sm font-medium">Email Address</label>
+                                    <input type="email" id="emailId" name="emailId" class="w-full p-3 border rounded-lg">
+                                </div>
+                                <div>
+                                    <label for="address" class="block mb-2 text-sm font-medium">Address</label>
+                                    <input type="text" id="address" name="address" class="w-full p-3 border rounded-lg">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Vehicles Section -->
+                        <div class="section">
+                            <h3 class="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Vehicles</h3>
+                            <div id="vehiclesContainer"></div>
+                            <button type="button" id="addVehicleBtn" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded">Add Vehicle</button>
+                        </div>
+                        <div class="flex flex-wrap gap-4">
+                            <button type="submit" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg">Save Customer</button>
+                            <button type="reset" class="px-6 py-3 bg-gray-200 text-gray-700 font-medium rounded-lg">Reset Form</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation (Mobile Only) -->
+    <div class="bottom-nav fixed bottom-0 left-0 right-0 h-16 bg-white dark:bg-dark-panel shadow-md flex items-center justify-around md:hidden z-20">
+        <div class="flex justify-around items-center w-full max-w-md mx-auto py-2">
+            <a href="index.html" class="bottom-nav-icon-btn" title="Home">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7m-9 2v10a1 1 0 001 1h4a1 1 0 001-1V12m-4-2h4" />
+                </svg>
+            </a>
+            <a href="order.html" class="bottom-nav-icon-btn" title="Order">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+            </a>
+            <a href="inventory.html" class="bottom-nav-icon-btn" title="Inventory">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 13H5v6a2 2 0 002 2h10a2 2 0 002-2v-6m-7-2V3m0 0L9 7m3-4l3 4" />
+                </svg>
+            </a>
+            <a href="carprofile.html" class="bottom-nav-icon-btn" title="Car Profile">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+            </a>
+        </div>
+    </div>
+
+    <style>
+        body, .main-container, .content-area, .section, .vehicle-section, .bg-white, .rounded-lg, .shadow-md, .p-6 {
+            background-color: #232b36 !important;
+            color: #f1f5fa !important;
+        }
+        .section, .vehicle-section {
+            background-color: #2d3748 !important;
+            border: 1px solid #3a4556;
+        }
+        input, select, textarea {
+            background-color: #1a202c !important;
+            color: #f1f5fa !important;
+            border: 1px solid #3a4556 !important;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #4299e1 !important;
+            box-shadow: 0 0 0 2px #4299e1;
+        }
+        label {
+            color: #cbd5e1 !important;
+        }
+        .remove-vehicle-btn {
+            color: #f87171 !important;
+        }
+        .remove-vehicle-btn:hover {
+            color: #ef4444 !important;
+        }
+        .bg-blue-600, .bg-blue-700, .bg-green-600, .bg-green-700, .bg-gray-200, .bg-gray-700 {
+            background-color: #2563eb !important;
+            color: #f1f5fa !important;
+        }
+        .bg-blue-600:hover, .bg-blue-700:hover {
+            background-color: #1d4ed8 !important;
+        }
+        .rounded, .rounded-lg {
+            border-radius: 0.5rem !important;
+        }
+        .text-gray-900, .text-gray-700, .text-gray-200, .text-black {
+            color: #f1f5fa !important;
+        }
+        .text-white {
+            color: #f1f5fa !important;
+        }
+        .text-red-600 {
+            color: #f87171 !important;
+        }
+        .text-red-600:hover {
+            color: #ef4444 !important;
+        }
+        .home-btn, .inventory-btn, .add-job-btn, .add-part-btn {
+            background-color: #232b36 !important;
+            color: #f1f5fa !important;
+        }
+        .home-btn:hover, .inventory-btn:hover, .add-job-btn:hover, .add-part-btn:hover {
+            background-color: #374151 !important;
+        }
+        .dark .section, .dark .vehicle-section {
+            background-color: #232b36 !important;
+        }
+        .dark input, .dark select, .dark textarea {
+            background-color: #1a202c !important;
+            color: #f1f5fa !important;
+        }
+        .dark label {
+            color: #cbd5e1 !important;
+        }
+        .dark .remove-vehicle-btn {
+            color: #f87171 !important;
+        }
+        .dark .remove-vehicle-btn:hover {
+            color: #ef4444 !important;
+        }
+        .dark .bg-blue-600, .dark .bg-blue-700 {
+            background-color: #2563eb !important;
+        }
+        .dark .bg-blue-600:hover, .dark .bg-blue-700:hover {
+            background-color: #1d4ed8 !important;
+        }
+        .dark .text-gray-900, .dark .text-gray-700, .dark .text-gray-200, .dark .text-black {
+            color: #f1f5fa !important;
+        }
+        .dark .text-white {
+            color: #f1f5fa !important;
+        }
+        .dark .text-red-600 {
+            color: #f87171 !important;
+        }
+        .dark .text-red-600:hover {
+            color: #ef4444 !important;
+        }
+        /* Button loading spinner */
+        .spinner {
+            border: 3px solid #374151;
+            border-top: 3px solid #4299e1;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+
+    <script>
+        console.log('New Customer page script starting...');
+        
+        // Check if required dependencies are loaded
+        if (typeof window.supabase === 'undefined') {
+            console.error('Supabase client not loaded!');
+            alert('Error: Database connection not available. Please refresh the page.');
+        }
+        
+        if (typeof CustomerDB === 'undefined') {
+            console.error('CustomerDB not loaded!');
+            alert('Error: Customer database utilities not loaded. Please refresh the page.');
+        }
+        
+        if (typeof VehicleDB === 'undefined') {
+            console.error('VehicleDB not loaded!');
+            alert('Error: Vehicle database utilities not loaded. Please refresh the page.');
+        }
+        
+        console.log('Dependencies check completed');
+
+        // Hamburger menu toggle
+        document.getElementById('hamburger-toggle')?.addEventListener('click', () => {
+            const menu = document.getElementById('hamburger-menu');
+            menu.classList.toggle('hidden');
+        });
+        
+        // Theme toggle
+        document.getElementById('theme-toggle')?.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+        });
+        
+        // Set initial theme
+        if (localStorage.getItem('theme') === 'dark' || 
+            (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+
+        console.log('Theme setup completed');
+
+        // Vehicle fields based on schema
+        const vehicleFields = [
+            { id: 'registration_number', label: 'Registration Number *', type: 'text', required: true },
+            { id: 'make_model_year', label: 'Make/Model/Year', type: 'text' },
+            { id: 'fuel_type', label: 'Fuel Type', type: 'select', options: ['', 'petrol', 'diesel', 'cng', 'electric', 'hybrid'] },
+            { id: 'avg_monthly_run', label: 'Avg Monthly Run (km)', type: 'number' },
+            { id: 'workshop_preference', label: 'Workshop Preference', type: 'text' },
+            { id: 'year_of_registration', label: 'Year of Registration', type: 'number' },
+            { id: 'last_service_date', label: 'Last Service Date', type: 'date' },
+            { id: 'next_service_date', label: 'Next Service Date', type: 'date' },
+            { id: 'insurance_expiry', label: 'Insurance Expiry', type: 'date' },
+            { id: 'puc_expiry', label: 'PUC Expiry', type: 'date' },
+            { id: 'latest_odometer_reading', label: 'Latest Odometer', type: 'number' },
+            { id: 'color', label: 'Color', type: 'text' }
+        ];
+        
+        console.log('Vehicle fields defined:', vehicleFields.length, 'fields');
+        
+        let vehicleCount = 0;
+        
+        function addVehicleSection() {
+            console.log('Adding vehicle section, count:', vehicleCount);
+            const idx = vehicleCount++;
+            const section = document.createElement('div');
+            section.className = 'vehicle-section mb-6 p-4 border rounded-lg bg-gray-50';
+            section.innerHTML = `<div class="flex justify-between items-center mb-2">
+                <h4 class="font-semibold">Vehicle ${idx + 1}</h4>
+                <button type="button" class="remove-vehicle-btn text-red-600" data-idx="${idx}">Remove</button>
+            </div>` +
+                vehicleFields.map(field => {
+                    if (field.type === 'select') {
+                        return `<div class="mb-2"><label class="block text-sm mb-1">${field.label}</label><select name="${field.id}_${idx}" id="${field.id}_${idx}" class="w-full p-2 border rounded">${field.options.map(opt => `<option value="${opt}">${opt ? opt.charAt(0).toUpperCase() + opt.slice(1) : 'Select'}</option>`).join('')}</select></div>`;
+                    } else {
+                        return `<div class="mb-2"><label class="block text-sm mb-1">${field.label}</label><input type="${field.type}" name="${field.id}_${idx}" id="${field.id}_${idx}" class="w-full p-2 border rounded" ${field.required ? 'required' : ''}></div>`;
+                    }
+                }).join('');
+            document.getElementById('vehiclesContainer').appendChild(section);
+            console.log('Vehicle section added successfully');
+        }
+        
+        // Wait for DOM to be ready
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing form...');
+            
+            const addVehicleBtn = document.getElementById('addVehicleBtn');
+            const vehiclesContainer = document.getElementById('vehiclesContainer');
+            const customerForm = document.getElementById('customerForm');
+            
+            if (!addVehicleBtn) {
+                console.error('Add vehicle button not found!');
+                return;
+            }
+            
+            if (!vehiclesContainer) {
+                console.error('Vehicles container not found!');
+                return;
+            }
+            
+            if (!customerForm) {
+                console.error('Customer form not found!');
+                return;
+            }
+            
+            console.log('All form elements found, setting up event listeners...');
+            
+            addVehicleBtn.addEventListener('click', addVehicleSection);
+            
+            vehiclesContainer.addEventListener('click', function(e) {
+                if (e.target.classList.contains('remove-vehicle-btn')) {
+                    console.log('Removing vehicle section');
+                    e.target.parentElement.parentElement.remove();
+                }
+            });
+            
+            // Add one vehicle section by default
+            addVehicleSection();
+            
+            console.log('Form initialization completed');
+        });
+
+        // --- FORM SUBMISSION LOGIC ---
+        document.addEventListener('DOMContentLoaded', function() {
+            const customerForm = document.getElementById('customerForm');
+            const submitBtn = customerForm.querySelector('button[type="submit"]');
+            let loadingSpinner = null;
+            if (!customerForm) return;
+            customerForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                if (loadingSpinner) loadingSpinner.remove();
+                loadingSpinner = document.createElement('span');
+                loadingSpinner.className = 'spinner';
+                submitBtn.disabled = true;
+                submitBtn.prepend(loadingSpinner);
+                try {
+                    // Gather customer data
+                    const customerData = {
+                        full_name: document.getElementById('fullName').value.trim(),
+                        mobile_number: document.getElementById('mobileNumber').value.trim(),
+                        email_id: document.getElementById('emailId').value.trim() || null,
+                        address: document.getElementById('address').value.trim() || null
+                    };
+                    if (!customerData.full_name || !customerData.mobile_number) {
+                        alert('Full Name and Mobile Number are required.');
+                        submitBtn.disabled = false;
+                        loadingSpinner.remove();
+                        return;
+                    }
+                    // Gather vehicles
+                    const vehicleSections = document.querySelectorAll('.vehicle-section');
+                    if (vehicleSections.length === 0) {
+                        alert('Please add at least one vehicle.');
+                        submitBtn.disabled = false;
+                        loadingSpinner.remove();
+                        return;
+                    }
+                    const vehicles = [];
+                    for (const [idx, section] of Array.from(vehicleSections).entries()) {
+                        const vehicle = { };
+                        for (const field of vehicleFields) {
+                            const el = section.querySelector(`[name="${field.id}_${idx}"]`);
+                            if (el && el.value) {
+                                vehicle[field.id] = field.type === 'number' ? (el.value ? parseInt(el.value) : null) : el.value;
+                            }
+                        }
+                        if (!vehicle.registration_number) {
+                            alert('Registration Number is required for all vehicles.');
+                            submitBtn.disabled = false;
+                            loadingSpinner.remove();
+                            return;
+                        }
+                        vehicles.push(vehicle);
+                    }
+                    // Store in Supabase
+                    const customer = await CustomerDB.createCustomer(customerData);
+                    let firstVehicleId = null;
+                    for (const vehicle of vehicles) {
+                        vehicle.customer_id = customer.customer_id;
+                        const createdVehicle = await VehicleDB.createVehicle(vehicle);
+                        if (!firstVehicleId) firstVehicleId = createdVehicle.vehicle_id;
+                    }
+                    alert('Customer and vehicles added successfully!');
+                    window.location.href = `carprofile.html?id=${firstVehicleId}`;
+                } catch (err) {
+                    alert('Error: ' + (err.message || err));
+                } finally {
+                    submitBtn.disabled = false;
+                    if (loadingSpinner) loadingSpinner.remove();
+                }
+            });
+            
+            console.log('Form submission handler attached');
+        });
+
+        console.log('New Customer page script completed');
+    </script>
+</body>
+</html>

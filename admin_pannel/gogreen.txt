@@ -1,0 +1,16 @@
+Analyzing compliance_dashboard_page.dart...                     
+
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\pages\compliance_dashboard_page.dart:695:21 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\pages\compliance_dashboard_page.dart:739:48 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\pages\compliance_dashboard_page.dart:795:40 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\pages\compliance_dashboard_page.dart:796:48 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps - lib\pages\compliance_dashboard_page.dart:802:48 - use_build_context_synchronously
+   info - Use 'const' with the constructor to improve performance - lib\pages\compliance_dashboard_page.dart:1317:27 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\pages\compliance_dashboard_page.dart:1318:39 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - lib\pages\compliance_dashboard_page.dart:1319:31 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\pages\compliance_dashboard_page.dart:1325:31 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\pages\compliance_dashboard_page.dart:1327:40 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\pages\compliance_dashboard_page.dart:1337:31 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\pages\compliance_dashboard_page.dart:1345:40 - prefer_const_constructors
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\pages\compliance_dashboard_page.dart:1598:13 - deprecated_member_use
+

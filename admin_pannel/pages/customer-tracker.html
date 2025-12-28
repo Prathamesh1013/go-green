@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#000000">
+    <meta name="description" content="Car service management application">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Carigar">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/icon-152x152.png">
+    <title>Service Calendar - Carigar</title>
+    <script>
+        // Force dark theme
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+    </script>
+    <link href="../assets/css/styles.css" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/look.css">
+    <script src="../assets/js/supabase-db.js"></script>
+    <style>
+        body {
+            background-color: #0c0f17;
+            color: #e2e8f0;
+            font-family: 'DM Sans', sans-serif;
+        }
+        .day-row {
+            border-bottom: 1px solid #1e2433;
+            height: 40px;
+            display: flex;
+            align-items: center;
+        }
+        .day-row:hover {
+            background-color: #1a2238;
+        }
+        .day-number {
+            width: 24px;
+            margin-right: 10px;
+            text-align: right;
+            color: #64748b;
+            font-size: 14px;
+        }
+        .day-row.today {
+            background-color: #1a2238;
+        }
+        .day-row.today .day-number {
+            color: white;
+            font-weight: 600;
+        }
+        .service-item {
+            padding: 4px 10px;
+            border-radius: 4px;
+            margin-right: 8px;
+            font-size: 0.85rem;
+            color: #f8fafc;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .sidebar-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            padding: 2px;
+        }
+        .sidebar-icon.active {
+            color: white;
+            background-color: #3b82f6;
+        }
+        .header-button {
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .search-input {
+            background-color: #111827;
+            border: 1px solid #2d3748;
+            color: white;
+            padding: 6px 12px 6px 32px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .service-filter {
+            background-color: #111827;
+            border: 1px solid #2d3748;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .day-name {
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            color: #64748b;
+            font-weight: 500;
+            font-size: 14px;
+        }
+    </style>
+
+    <script src="../assets/js/supabase.js"></script>
+    <script src="../assets/js/auth-middleware.js"></script>
+</head>
+<body class="bg-[#0c0f17] text-white">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="w-12 bg-[#0a0e14] flex flex-col items-center py-6 gap-6">
+            <div>
+                <img src="../assets/icons/carigar-logo.svg" alt="Carigar Logo" class="w-6 h-6">
+            </div>
+            <a href="index.html" class="sidebar-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+            </a>
+            <a href="#" class="sidebar-icon active">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+            </a>
+            <a href="#" class="sidebar-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+            </a>
+            <a href="#" class="sidebar-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+            </a>
+            <a href="#" class="sidebar-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            </a>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col">
+            <!-- Header -->
+            <div class="flex justify-between items-center py-3 px-6 border-b border-gray-800">
+                <div class="flex items-center gap-4">
+                    <h1 class="text-xl font-semibold text-white">Service Calendar</h1>
+                    <div class="flex items-center space-x-2 text-sm">
+                        <button class="p-1 text-gray-400 hover:text-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </button>
+                        <span>May 2025</span>
+                        <button class="p-1 text-gray-400 hover:text-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button class="header-button bg-[#1a2238] hover:bg-[#243047]">Today</button>
+                    <div class="flex rounded-md overflow-hidden border border-[#2d3748]">
+                        <button class="header-button bg-[#1a2238]">Month</button>
+                        <button class="header-button bg-[#111827]">Week</button>
+                        <button class="header-button bg-[#111827]">Day</button>
+                    </div>
+                    <button class="header-button bg-blue-600 hover:bg-blue-700 flex items-center gap-1">
+                        <span>+</span>
+                        <span>New Service</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Search and Filter -->
+            <div class="flex justify-between items-center py-3 px-6 border-b border-gray-800">
+                <div class="relative">
+                    <input type="text" placeholder="Search vehicle or service" class="search-input w-64">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-2 top-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                </div>
+                <select class="service-filter">
+                    <option>All Services</option>
+                    <option>Regular Maintenance</option>
+                    <option>Repairs</option>
+                    <option>Insurance Renewal</option>
+                </select>
+            </div>
+
+            <!-- Calendar Body -->
+            <div class="flex flex-1 overflow-hidden">
+                <!-- Day names column -->
+                <div class="w-20 flex flex-col border-r border-gray-800 bg-[#0c0f17]">
+                    <div class="day-name px-4">Sun</div>
+                    <div class="day-name px-4">Mon</div>
+                    <div class="day-name px-4">Tue</div>
+                    <div class="day-name px-4">Wed</div>
+                    <div class="day-name px-4">Thu</div>
+                    <div class="day-name px-4">Fri</div>
+                    <div class="day-name px-4">Sat</div>
+                </div>
+
+                <!-- Calendar events -->
+                <div class="flex-1 overflow-y-auto">
+                    <!-- Previous month dates -->
+                    <div class="day-row pl-4">
+                        <div class="day-number text-gray-500">28</div>
+                        <div class="flex-1 flex items-center"></div>
+                    </div>
+                    <div class="day-row pl-4">
+                        <div class="day-number text-gray-500">29</div>
+                        <div class="flex-1 flex items-center"></div>
+                    </div>
+                    <div class="day-row pl-4">
+                        <div class="day-number text-gray-500">30</div>
+                        <div class="flex-1 flex items-center"></div>
+                    </div>
+                    <div class="day-row pl-4">
+                        <div class="day-number text-gray-500">31</div>
+                        <div class="flex-1 flex items-center"></div>
+                    </div>
+
+                    <!-- Current month -->
+                    <div class="day-row pl-4">
+                        <div class="day-number">1</div>
+                        <div class="flex-1 flex items-center">
+                            <div class="service-item bg-blue-900">BMW M5 - Oil Change</div>
+                        </div>
+                    </div>
+                    <div class="day-row pl-4">
+                        <div class="day-number">2</div>
+                        <div class="flex-1 flex items-center"></div>
+                    </div>
+                    <div class="day-row pl-4">
+                        <div class="day-number">3</div>
+                        <div class="flex-1 flex items-center"></div>
+                    </div>
+                    <div class="day-row pl-4">
+                        <div class="day-number">4</div>
+                        <div class="flex-1 flex items-center"></div>
+                    </div>
+                    <div class="day-row pl-4">
+                        <div class="day-number">5</div>
+                        <div class="flex-1 flex items-center">
+                            <div class="service-item bg-indigo-900">Audi A4 - Brake Service</div>
+                        </div>
+                    </div>
+                    <div class="day-row pl-4">
+                        <div class="day-number">6</div>
+                        <div class="flex-1 flex items-center"></div>
+                    </div>
+                    <div class="day-row pl-4">
+                        <div class="day-number">7</div>
+                        <div class="flex-1 flex items-center"></div>
+                    </div>
+                    <div class="day-row pl-4">
+                        <div class="day-number">8</div>
+                        <div class="flex-1 flex items-center">
+                            <div class="service-item bg-green-900">Mercedes GLC - Insurance</div>
+                            <div class="service-item bg-red-900">Honda City - Engine</div>
+                        </div>
+                    </div>
+                    <div class="day-row pl-4">
+                        <div class="day-number">9</div>
+                        <div class="flex-1 flex items-center"></div>
+                    </div>
+                    <div class="day-row pl-4">
+                        <div class="day-number">10</div>
+                        <div class="flex-1 flex items-center"></div>
+                    </div>
+                    <div class="day-row pl-4">
+                        <div class="day-number">11</div>
+                        <div class="flex-1 flex items-center"></div>
+                    </div>
+                    <div class="day-row pl-4">
+                        <div class="day-number">12</div>
+                        <div class="flex-1 flex items-center">
+                            <div class="service-item bg-blue-900">BMW M5 - Maintenance</div>
+                        </div>
+                    </div>
+                    <div class="day-row pl-4">
+                        <div class="day-number">13</div>
+                        <div class="flex-1 flex items-center"></div>
+                    </div>
+                    <div class="day-row pl-4">
+                        <div class="day-number">14</div>
+                        <div class="flex-1 flex items-center">
+                            <div class="service-item bg-yellow-900">Toyota Corolla - Wheels</div>
+                        </div>
+                    </div>
+                    <div class="day-row today pl-4">
+                        <div class="day-number">15</div>
+                        <div class="flex-1 flex items-center">
+                            <div class="service-item bg-indigo-900">Hyundai i20 - AC Service</div>
+                            <div class="service-item bg-blue-900">Maruti Swift - Paint</div>
+                        </div>
+                    </div>
+                    <div class="day-row pl-4">
+                        <div class="day-number">16</div>
+                        <div class="flex-1 flex items-center"></div>
+                    </div>
+                    <div class="day-row pl-4">
+                        <div class="day-number">17</div>
+                        <div class="flex-1 flex items-center"></div>
+                    </div>
+                    <div class="day-row pl-4">
+                        <div class="day-number">18</div>
+                        <div class="flex-1 flex items-center"></div>
+                    </div>
+                    <div class="day-row pl-4">
+                        <div class="day-number">19</div>
+                        <div class="flex-1 flex items-center"></div>
+                    </div>
+                    <div class="day-row pl-4">
+                        <div class="day-number">20</div>
+                        <div class="flex-1 flex items-center">
+                            <div class="service-item bg-green-900">Kia Seltos - Insurance</div>
+                        </div>
+                    </div>
+                    <div class="day-row pl-4">
+                        <div class="day-number">21</div>
+                        <div class="flex-1 flex items-center"></div>
+                    </div>
+                    <div class="day-row pl-4">
+                        <div class="day-number">22</div>
+                        <div class="flex-1 flex items-center"></div>
+                    </div>
+                    <div class="day-row pl-4">
+                        <div class="day-number">23</div>
+                        <div class="flex-1 flex items-center">
+                            <div class="service-item bg-blue-900">BMW X5 - Regular Service</div>
+                        </div>
+                    </div>
+                    <div class="day-row pl-4">
+                        <div class="day-number">24</div>
+                        <div class="flex-1 flex items-center"></div>
+                    </div>
+                    <div class="day-row pl-4">
+                        <div class="day-number">25</div>
+                        <div class="flex-1 flex items-center"></div>
+                    </div>
+                    <div class="day-row pl-4">
+                        <div class="day-number">26</div>
+                        <div class="flex-1 flex items-center"></div>
+                    </div>
+                    <div class="day-row pl-4">
+                        <div class="day-number">27</div>
+                        <div class="flex-1 flex items-center">
+                            <div class="service-item bg-indigo-900">Audi Q7 - Transmission</div>
+                        </div>
+                    </div>
+                    <div class="day-row pl-4">
+                        <div class="day-number">28</div>
+                        <div class="flex-1 flex items-center"></div>
+                    </div>
+                    <div class="day-row pl-4">
+                        <div class="day-number">29</div>
+                        <div class="flex-1 flex items-center"></div>
+                    </div>
+                    <div class="day-row pl-4">
+                        <div class="day-number">30</div>
+                        <div class="flex-1 flex items-center">
+                            <div class="service-item bg-yellow-900">Honda Civic - Parts</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Service items clickable
+            const serviceItems = document.querySelectorAll('.service-item');
+            serviceItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    // Would show service details on click
+                    console.log('Service clicked:', item.textContent);
+                    // Here you would typically show a modal or navigate to details
+                });
+            });
+        });
+    </script>
+</body>
+</html> 

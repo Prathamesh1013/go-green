@@ -1,0 +1,2793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#000000">
+    <meta name="description" content="Car service management application">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Carigar">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/icon-152x152.png">
+    <title>Carigar</title>
+    <link href="../assets/css/styles.css" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/look.css">
+    <script src="../assets/js/supabase-db.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful');
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+    </script>
+</head>
+<body class="flex min-h-screen flex-col">
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col">
+        <!-- Top Navbar (Desktop Only) -->
+        <div class="top-nav h-16 shadow-md flex items-center px-4 md:px-6 sticky top-0 z-10 relative justify-between md:justify-start hidden md:flex">
+            <div class="flex items-center gap-2">
+                <span class="text-2xl font-semibold gilroy text-black dark:text-white hidden dark:block">Carigar</span>
+            </div>
+            <div class="flex gap-6 items-center ml-10">
+                <a href="index.html" class="nav-icon-btn active" title="Home">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7m-9 2v10a1 1 0 001 1h4a1 1 0 001-1V12m-4-2h4" />
+                    </svg>
+                </a>
+                <a href="order.html" class="nav-icon-btn" title="Order">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                </a>
+                <a href="inventory.html" class="nav-icon-btn" title="Inventory">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 13H5v6a2 2 0 002 2h10a2 2 0 002-2v-6m-7-2V3m0 0L9 7m3-4l3 4" />
+                    </svg>
+                </a>
+                <a href="carprofile.html" class="nav-icon-btn" title="Car Profile">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
+                </a>
+            </div>
+            <div class="ml-auto flex gap-2 items-center">
+                <button id="theme-toggle" class="p-2 rounded-lg bg-light-toggle dark:bg-dark-toggle text-light-text dark:text-dark-text hover:bg-light-toggle-hover dark:hover:bg-dark-toggle-hover">
+                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Layout -->
+        <div class="main-container flex-1 flex flex-col px-4 md:px-6 pb-6 gap-6">
+            <!-- Content Area -->
+            <div class="content-area w-full flex flex-col gap-6">
+                <!-- Quick Actions Section -->
+                <div class="quick-actions p-4 md:p-6 rounded-lg shadow-md border text-light-text dark:text-dark-text">
+                    <h2 class="text-xl font-bold mb-4 gilroy">Quick Actions</h2>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                        <button onclick="window.location.href='new-customer.html'" class="flex flex-col items-center p-4 rounded-lg home-btn hover:bg-blue-300 transition-colors">
+                            <svg class="w-6 h-6 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                            </svg>
+                            <span class="text-sm gilroy font-medium">New Customer</span>
+                        </button>
+                        <button onclick="window.location.href='order.html'" class="flex flex-col items-center p-4 rounded-lg inventory-btn hover:bg-pink-300 transition-colors">
+                            <svg class="w-6 h-6 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                            <span class="text-sm gilroy font-medium">New Order</span>
+                        </button>
+                        <button onclick="window.location.href='followup-reminders.html'" class="flex flex-col items-center p-4 rounded-lg add-job-btn hover:bg-purple-300 transition-colors">
+                            <svg class="w-6 h-6 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span class="text-sm gilroy font-medium">Follow up & Reminders</span>
+                        </button>
+                        <button onclick="window.location.href='dealership-directory.html'" class="flex flex-col items-center p-4 rounded-lg add-part-btn hover:bg-teal-300 transition-colors">
+                            <svg class="w-6 h-6 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                            <span class="text-sm gilroy font-medium">Dealership Directory</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Kanban Board Columns (Horizontal) -->
+                <div class="kanban-board p-4 md:p-6 rounded-lg shadow-md border text-light-text dark:text-dark-text overflow-x-auto bg-gray-900">
+                    <!-- Upcoming Column -->
+                    <div class="kanban-column">
+                        <div class="kanban-section p-4 rounded-lg border border-gray-700 bg-gray-800/50 flex-1 flex flex-col">
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="text-md font-semibold gilroy text-white flex items-center">
+                                    Upcoming <span id="upcoming-count" class="ml-2 text-xs font-normal text-gray-400">0</span>
+                                </h4>
+                                <button class="add-vehicle-btn w-8 h-8 flex items-center justify-center bg-purple-500 hover:bg-purple-600 text-white rounded-full text-xl">+</button>
+                            </div>
+                            <div id="upcoming-vehicles" class="min-h-[60px] flex-1 flex flex-col gap-2 vehicle-drop-zone" data-column="upcoming">
+                                <!-- Upcoming vehicles will be loaded here -->
+                                <div class="p-3 bg-gray-700 rounded-lg text-center text-gray-300">No upcoming vehicles</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Ongoing Third Party Column -->
+                    <div class="kanban-column">
+                        <div class="kanban-section p-4 rounded-lg border border-gray-700 bg-gray-800/50 flex-1 flex flex-col">
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="text-md font-semibold gilroy text-white flex items-center">
+                                    Ongoing Third Party <span id="third-party-count" class="ml-2 text-xs font-normal text-gray-400">0</span>
+                                </h4>
+                                <button class="add-vehicle-btn w-8 h-8 flex items-center justify-center bg-purple-500 hover:bg-purple-600 text-white rounded-full text-xl">+</button>
+                            </div>
+                            <div id="third-party-vehicles" class="min-h-[60px] flex-1 flex flex-col gap-2 vehicle-drop-zone" data-column="third-party">
+                                <!-- Third party vehicles will be loaded here -->
+                                <div class="p-3 bg-gray-700 rounded-lg text-center text-gray-300">No third-party vehicles</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Ongoing Dealership Column -->
+                    <div class="kanban-column">
+                        <div class="kanban-section p-4 rounded-lg border border-gray-700 bg-gray-800/50 flex-1 flex flex-col">
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="text-md font-semibold gilroy text-white flex items-center">
+                                    Ongoing Dealership <span id="dealership-count" class="ml-2 text-xs font-normal text-gray-400">0</span>
+                                </h4>
+                                <button class="add-vehicle-btn w-8 h-8 flex items-center justify-center bg-purple-500 hover:bg-purple-600 text-white rounded-full text-xl">+</button>
+                            </div>
+                            <div id="dealership-vehicles" class="min-h-[60px] flex-1 flex flex-col gap-2 vehicle-drop-zone" data-column="dealership">
+                                <!-- Dealership vehicles will be loaded here -->
+                                <div class="p-3 bg-gray-700 rounded-lg text-center text-gray-300">No dealership vehicles</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Non Workshop Active Column -->
+                    <div class="kanban-column">
+                        <div class="kanban-section p-4 rounded-lg border border-gray-700 bg-gray-800/50 flex-1 flex flex-col">
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="text-md font-semibold gilroy text-white flex items-center">
+                                    Non Workshop Active <span id="non-workshop-count" class="ml-2 text-xs font-normal text-gray-400">0</span>
+                                </h4>
+                                <button class="add-vehicle-btn w-8 h-8 flex items-center justify-center bg-purple-500 hover:bg-purple-600 text-white rounded-full text-xl">+</button>
+                            </div>
+                            <div id="non-workshop-vehicles" class="min-h-[60px] flex-1 flex flex-col gap-2 vehicle-drop-zone" data-column="non-workshop">
+                                <!-- Non-workshop vehicles will be loaded here -->
+                                <div class="p-3 bg-gray-700 rounded-lg text-center text-gray-300">No non-workshop vehicles</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Payment Pending Column -->
+                    <div class="kanban-column">
+                        <div class="kanban-section p-4 rounded-lg border border-gray-700 bg-gray-800/50 flex-1 flex flex-col">
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="text-md font-semibold gilroy text-white flex items-center">
+                                    Payment Pending <span id="payment-pending-count" class="ml-2 text-xs font-normal text-gray-400">0</span>
+                                </h4>
+                                <button class="add-vehicle-btn w-8 h-8 flex items-center justify-center bg-purple-500 hover:bg-purple-600 text-white rounded-full text-xl">+</button>
+                            </div>
+                            <div id="payment-pending-vehicles" class="min-h-[60px] flex-1 flex flex-col gap-2 vehicle-drop-zone" data-column="payment-pending">
+                                <!-- Payment pending vehicles will be loaded here -->
+                                <div class="p-3 bg-gray-700 rounded-lg text-center text-gray-300">No payment pending vehicles</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Completed Column -->
+                    <div class="kanban-column">
+                        <div class="kanban-section p-4 rounded-lg border border-gray-700 bg-gray-800/50 flex-1 flex flex-col">
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="text-md font-semibold gilroy text-white flex items-center">
+                                    Completed <span id="completed-column-count" class="ml-2 text-xs font-normal text-gray-400">0</span>
+                                </h4>
+                                <button class="add-vehicle-btn w-8 h-8 flex items-center justify-center bg-purple-500 hover:bg-purple-600 text-white rounded-full text-xl">+</button>
+                            </div>
+                            <div id="completed-vehicles" class="min-h-[60px] flex-1 flex flex-col gap-2 vehicle-drop-zone" data-column="completed">
+                                <!-- Completed vehicles will be loaded here -->
+                                <div class="p-3 bg-gray-700 rounded-lg text-center text-gray-300">No completed vehicles</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Summary Stats and Other Actions -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Summary Stats -->
+                    <div class="summary-stats p-4 md:p-6 rounded-lg shadow-md border text-light-text dark:text-dark-text">
+                        <h2 class="text-xl font-bold mb-4 gilroy">Summary</h2>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="stat-card p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                                <div class="text-sm text-muted">Active Orders</div>
+                                <div id="active-orders-count" class="text-2xl font-bold text-blue-600 dark:text-blue-400">-</div>
+                            </div>
+                            <div class="stat-card p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                                <div class="text-sm text-muted">Completed This Month</div>
+                                <div id="completed-orders-count" class="text-2xl font-bold text-green-600 dark:text-green-400">-</div>
+                            </div>
+                            <div class="stat-card p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                                <div class="text-sm text-muted">Total Customers</div>
+                                <div id="total-customers-count" class="text-2xl font-bold text-purple-600 dark:text-purple-400">-</div>
+                            </div>
+                            <div class="stat-card p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                                <div class="text-sm text-muted">Pending Followups</div>
+                                <div id="pending-followups-count" class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reminders and Followups -->
+                    <div class="reminders p-4 md:p-6 rounded-lg shadow-md border text-light-text dark:text-dark-text">
+                        <h2 class="text-xl font-bold mb-4 gilroy">Reminders & Followups</h2>
+                        <div id="reminders-container" class="space-y-3">
+                            <!-- Reminders will be loaded here dynamically -->
+                            <div class="skeleton-loader p-3 border-l-4 border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 rounded-r-lg animate-pulse">
+                                <div class="h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+                                <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation (Mobile Only) -->
+    <div class="bottom-nav fixed bottom-0 left-0 right-0 h-16 bg-white dark:bg-dark-panel shadow-md flex items-center justify-around md:hidden z-20">
+        <div class="flex justify-around items-center w-full max-w-md mx-auto py-2">
+            <a href="index.html" class="bottom-nav-icon-btn active" title="Home">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7m-9 2v10a1 1 0 001 1h4a1 1 0 001-1V12m-4-2h4" />
+                </svg>
+            </a>
+            <a href="order.html" class="bottom-nav-icon-btn" title="Order">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+            </a>
+            <a href="inventory.html" class="bottom-nav-icon-btn" title="Inventory">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 13H5v6a2 2 0 002 2h10a2 2 0 002-2v-6m-7-2V3m0 0L9 7m3-4l3 4" />
+                </svg>
+            </a>
+            <a href="carprofile.html" class="bottom-nav-icon-btn" title="Car Profile">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+            </a>
+        </div>
+    </div>
+
+    <!-- Job Sheet Modal -->
+    <div id="job-sheet-modal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+        <div class="absolute inset-0 flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+                <!-- Modal Header -->
+                <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                    <h3 class="text-xl font-semibold text-light-text dark:text-dark-text">New Job Sheet</h3>
+                    <button id="close-job-sheet-modal" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- Modal Body -->
+                <div class="flex-1 overflow-auto p-6">
+                    <!-- Customer Selection Section -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-light-text dark:text-dark-text mb-2">Customer</label>
+                        <div class="relative">
+                            <input id="customer-search" type="text" placeholder="Search customer by name, phone or email" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-light-panel dark:bg-dark-panel text-light-text dark:text-dark-text">
+                            <div id="customer-search-results" class="absolute left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto hidden">
+                                <!-- Customer search results will appear here -->
+                            </div>
+                        </div>
+                        <div id="selected-customer" class="mt-3 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-light-panel dark:bg-dark-panel hidden">
+                            <!-- Selected customer details will appear here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Vehicle Selection Section -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-light-text dark:text-dark-text mb-2">Vehicle</label>
+                        <select id="vehicle-select" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-light-panel dark:bg-dark-panel text-light-text dark:text-dark-text">
+                            <option value="">Select a customer first</option>
+                        </select>
+                    </div>
+
+                    <!-- Tabs for Customer Notes and Order -->
+                    <div class="border-b border-gray-200 dark:border-gray-700">
+                        <ul class="flex flex-wrap -mb-px">
+                            <li class="mr-2">
+                                <button id="customer-notes-tab" class="inline-block p-4 border-b-2 border-blue-500 rounded-t-lg active">Customer Notes</button>
+                            </li>
+                            <li class="mr-2">
+                                <button id="order-tab" class="inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:text-gray-600 hover:border-gray-300">Order Details</button>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Tab Content -->
+                    <div class="mt-4">
+                        <!-- Customer Notes Section -->
+                        <div id="customer-notes-content" class="tab-content">
+                            <div class="mb-4 flex items-center">
+                                <input id="new-note" type="text" placeholder="Add a new note..." class="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-light-panel dark:bg-dark-panel text-light-text dark:text-dark-text">
+                                <button id="add-note-btn" class="ml-2 bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-lg">Add</button>
+                            </div>
+                            <div id="notes-list" class="space-y-2 max-h-80 overflow-y-auto">
+                                <!-- Notes will be added here -->
+                                <div class="text-gray-500 dark:text-gray-400 text-center p-4">
+                                    No notes added yet
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Order Section -->
+                        <div id="order-content" class="tab-content hidden">
+                            <!-- Service Type Selection -->
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-light-text dark:text-dark-text mb-2">Service Type</label>
+                                <select id="service-type" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-light-panel dark:bg-dark-panel text-light-text dark:text-dark-text">
+                                    <option value="regular">Regular Service</option>
+                                    <option value="inspection">Inspection</option>
+                                    <option value="repair">Repair</option>
+                                    <option value="modification">Modification</option>
+                                    <option value="warranty">Warranty Work</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Job Templates -->
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-light-text dark:text-dark-text mb-2">Job Template</label>
+                                <select id="job-template" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-light-panel dark:bg-dark-panel text-light-text dark:text-dark-text">
+                                    <option value="">Select a template</option>
+                                    <option value="periodic">Periodic Service</option>
+                                    <option value="oil">Oil Change</option>
+                                    <option value="brake">Brake Service</option>
+                                    <option value="clutch">Clutch Overhaul</option>
+                                    <option value="alignment">Wheel Alignment</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Jobs List -->
+                            <div class="mb-4">
+                                <div class="flex justify-between items-center mb-2">
+                                    <label class="block text-sm font-medium text-light-text dark:text-dark-text">Jobs</label>
+                                    <button id="add-job-btn" class="text-sm bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">Add Job</button>
+                                </div>
+                                <div id="jobs-container" class="space-y-3 mb-4">
+                                    <!-- Jobs will be added here -->
+                                    <div class="text-gray-500 dark:text-gray-400 text-center p-4 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+                                        No jobs added yet. Click 'Add Job' to start.
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Pricing Section -->
+                            <div class="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-light-text dark:text-dark-text">Subtotal:</span>
+                                    <span id="subtotal" class="text-light-text dark:text-dark-text">₹0.00</span>
+                                </div>
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-light-text dark:text-dark-text">Tax (18%):</span>
+                                    <span id="tax" class="text-light-text dark:text-dark-text">₹0.00</span>
+                                </div>
+                                <div class="flex justify-between font-bold">
+                                    <span class="text-light-text dark:text-dark-text">Total:</span>
+                                    <span id="total" class="text-light-text dark:text-dark-text">₹0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Modal Footer -->
+                <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-between">
+                    <div>
+                        <select id="job-status" class="p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-light-panel dark:bg-dark-panel text-light-text dark:text-dark-text">
+                            <option value="scheduled">Schedule for Later</option>
+                            <option value="in_progress">Start Right Now</option>
+                        </select>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button id="send-estimate-btn" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg">Send Estimate</button>
+                        <button id="save-job-btn" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg">Save Job</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add the Vehicle Details Modal -->
+    <div id="vehicle-details-modal" class="fixed inset-0 z-50 hidden">
+        <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+        <div class="absolute inset-0 flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-xl max-h-[90vh] overflow-hidden flex flex-col">
+                <!-- Modal Header with Status -->
+                <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center space-x-3 flex-1">
+                            <span class="font-medium">Status:</span>
+                            <select id="vehicle-status-select" class="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                                <option value="upcoming">Upcoming</option>
+                                <option value="third-party">Third Party</option>
+                                <option value="dealership">Dealership</option>
+                                <option value="non-workshop">Non Workshop</option>
+                                <option value="payment-pending">Payment Pending</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                        </div>
+                        <button id="close-vehicle-details" class="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-2xl font-bold">
+                            &times;
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Modal Body -->
+                <div class="flex-1 overflow-auto p-4">
+                    <!-- Customer Section -->
+                    <div class="mb-4">
+                        <h3 class="text-lg font-medium mb-2">Customer Name</h3>
+                        <div id="vehicle-customer-info" class="p-3 border border-gray-300 dark:border-gray-600 rounded-lg">
+                            <div class="font-medium" id="customer-name-display">Loading...</div>
+                            <div class="text-sm text-gray-500" id="customer-contact">Loading...</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Vehicle Section -->
+                    <div class="mb-4">
+                        <h3 class="text-lg font-medium mb-2">Vehicle Details</h3>
+                        <div id="vehicle-details-info" class="p-3 border border-gray-300 dark:border-gray-600 rounded-lg">
+                            <div class="flex justify-between">
+                                <span id="vehicle-make-model">Loading...</span>
+                                <span id="vehicle-reg-number" class="text-gray-500">Loading...</span>
+                            </div>
+                            <div class="text-sm mt-1" id="vehicle-extra-details">Loading...</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Customer Notes Section -->
+                    <div class="mb-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-lg font-medium">Customer Notes</h3>
+                            <button id="add-note-button" class="bg-black text-white w-8 h-8 flex items-center justify-center rounded">+</button>
+                        </div>
+                        <div id="notes-container" class="space-y-2">
+                            <!-- Notes will be added here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Job Cards Section -->
+                    <div class="mb-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-lg font-medium">Job Card</h3>
+                            <button id="add-job-section-button" class="bg-black text-white w-8 h-8 flex items-center justify-center rounded">+</button>
+                        </div>
+                        
+                        <!-- Jobs Container - Scrollable -->
+                        <div id="jobs-sections-container" class="space-y-3 max-h-[300px] overflow-y-auto">
+                            <!-- Default "Other" section -->
+                            <div class="job-section p-3 bg-gray-800 rounded-lg">
+                                <h4 class="text-white font-medium mb-2">Other</h4>
+                                <div class="text-sm text-gray-300 mb-2">Parts: ₹0 Labor: ₹0 Total: ₹0</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="flex space-x-2 mt-3">
+                            <button class="add-job-section-btn px-4 py-2 bg-purple-500 text-white rounded">Add Job</button>
+                            <button class="add-part-btn px-4 py-2 bg-teal-500 text-white rounded">Add Part</button>
+                            <button class="add-labor-btn px-4 py-2 bg-yellow-500 text-white rounded">Add Labor</button>
+                        </div>
+                        
+                        <!-- Totals -->
+                        <div class="text-sm mt-3">
+                            <span class="font-medium">Parts: ₹<span id="total-parts">0</span></span>
+                            <span class="mx-2">Labor: ₹<span id="total-labor">0</span></span>
+                            <span class="font-medium">Total: ₹<span id="grand-total">0</span></span>
+                        </div>
+                    </div>
+                    
+                    <!-- Export Buttons -->
+                    <div class="flex space-x-4 mt-6">
+                        <button id="export-estimate-btn" class="px-6 py-3 bg-gray-800 text-white rounded-full border border-gray-600 hover:bg-gray-700">
+                            Export Estimate
+                        </button>
+                        <button id="export-receipt-btn" class="px-6 py-3 bg-gray-800 text-white rounded-full border border-gray-600 hover:bg-gray-700">
+                            Export Receipt
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Update existing styles */
+        .main-container {
+            padding-bottom: 5rem; /* Add padding for bottom navbar on mobile */
+        }
+
+        .nav-btn {
+            @apply flex flex-col items-center justify-center gap-1 p-2 rounded-lg transition-colors duration-200;
+        }
+
+        .nav-btn.active {
+            @apply bg-light-toggle dark:bg-dark-toggle text-light-text dark:text-dark-text;
+        }
+
+        .nav-icon {
+            @apply w-6 h-6;
+        }
+
+        .nav-text {
+            @apply text-xs;
+        }
+
+        /* Mobile specific styles */
+        @media (max-width: 768px) {
+            .main-container {
+                padding-bottom: 6rem; /* Extra padding for bottom navbar */
+            }
+            
+            .top-nav {
+                display: none; /* Hide top navbar on mobile */
+            }
+            
+            .bottom-nav {
+                display: flex; /* Show bottom navbar on mobile */
+            }
+        }
+
+        /* Desktop specific styles */
+        @media (min-width: 769px) {
+            .top-nav {
+                display: flex; /* Show top navbar on desktop */
+            }
+            
+            .bottom-nav {
+                display: none; /* Hide bottom navbar on desktop */
+            }
+        }
+    </style>
+
+    <script>
+        // Hamburger menu toggle
+        document.getElementById('hamburger-toggle')?.addEventListener('click', () => {
+            const menu = document.getElementById('hamburger-menu');
+            menu.classList.toggle('hidden');
+        });
+        
+        // Theme toggle
+        document.getElementById('theme-toggle')?.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+        });
+        
+        // Set initial theme
+        if (localStorage.getItem('theme') === 'dark' || 
+            (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+
+        // Kanban board functionality
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // Fetch data from Supabase
+                await loadDashboardData();
+                
+                // Setup add interaction buttons
+                setupAddInteractionButtons();
+                
+                // Quick actions animation
+                setupQuickActionButtons();
+            } catch (error) {
+                console.error('Error initializing dashboard:', error);
+                showErrorMessage('Failed to load dashboard data. Please refresh the page.');
+            }
+        });
+
+        // Setup Add Interaction Buttons
+        function setupAddInteractionButtons() {
+            const addButtons = document.querySelectorAll('.add-interaction-btn');
+            
+            addButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    // Get the section title from parent container
+                    const sectionTitle = button.closest('.kanban-container').querySelector('h4').textContent;
+                    
+                    // Show add interaction modal (you can implement this later)
+                    showAddInteractionModal(sectionTitle);
+                });
+            });
+        }
+        
+        // Show Add Interaction Modal
+        function showAddInteractionModal(sectionTitle) {
+            alert(`Add interaction to ${sectionTitle} - This will be replaced with a proper modal`);
+            // Later you can implement a proper modal for adding interactions
+        }
+        
+        // Load dashboard data from Supabase
+        async function loadDashboardData() {
+            try {
+                // First verify if the service_records table exists and create it if not
+                try {
+                    console.log('Verifying and setting up service_records table...');
+                    const { count, error: countError } = await supabaseClient
+                        .from('service_records')
+                        .select('*', { count: 'exact', head: true });
+                        
+                    if (countError) {
+                        console.warn('Service records table may not exist or is empty, setting up demo data');
+                        await setupDemoData();
+                    }
+                } catch (setupError) {
+                    console.warn('Error checking service_records:', setupError);
+                }
+                
+                // 1. Load summary statistics
+                await loadSummaryStats();
+                
+                // 2. Load reminders and followups
+                await loadRemindersAndFollowups();
+                
+                // 3. Load vehicles for kanban board
+                await loadKanbanData();
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+                throw error;
+            }
+        }
+        
+        // Setup demo data if needed
+        async function setupDemoData() {
+            try {
+                // For demo purposes, create a simple UI to guide the user
+                document.querySelector('.content-area').innerHTML = `
+                    <div class="p-6 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg mb-6">
+                        <h3 class="text-lg font-semibold text-yellow-800 dark:text-yellow-200 mb-2">Database Setup Required</h3>
+                        <p class="mb-4 dark:text-yellow-100">The required database tables appear to be missing.</p>
+                        <p class="text-sm mb-2 dark:text-yellow-100">To set up your Supabase database, please create the following tables:</p>
+                        <div class="bg-white dark:bg-gray-800 p-4 rounded border mb-4 overflow-x-auto">
+                            <p class="font-mono text-sm dark:text-gray-300">1. service_records (id, vehicle_id, customer_id, service_type, 
+                            service_date, completion_date, notes, requires_followup, service_state, location, garage_name)</p>
+                            <p class="font-mono text-sm mt-2 dark:text-gray-300">2. customers (id, name, phone, email, address)</p>
+                            <p class="font-mono text-sm mt-2 dark:text-gray-300">3. vehicles (id, customer_id, make, model, year, registration_number, 
+                            insurance_expiry, puc_expiry)</p>
+                        </div>
+                        <p class="text-sm mb-4 dark:text-yellow-100">Or use the button below to automatically create sample data (feature coming soon):</p>
+                        <div class="flex gap-4">
+                            <button id="setup-demo-data-btn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                Setup Demo Data (Coming Soon)
+                            </button>
+                            <button id="refresh-btn" class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
+                                Refresh Page
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                // Add refresh button functionality
+                document.getElementById('refresh-btn')?.addEventListener('click', () => {
+                    window.location.reload();
+                });
+                
+                return true;
+            } catch (error) {
+                console.error('Error setting up demo data:', error);
+                throw error;
+            }
+        }
+        
+        // Fix loadSummaryStats to not rely on get_tables
+        async function loadSummaryStats() {
+            try {
+                console.log('Loading summary statistics');
+                
+                // Set default values first
+                document.getElementById('active-orders-count').textContent = 0;
+                document.getElementById('completed-orders-count').textContent = 0;
+                document.getElementById('total-customers-count').textContent = 0;
+                document.getElementById('pending-followups-count').textContent = 0;
+                
+                // Check if service_records table exists with a direct query
+                try {
+                    // Simple test query to check if the table exists
+                    const { data: testData, error: testError } = await supabaseClient
+                        .from('service_records')
+                        .select('id')
+                        .limit(1);
+                        
+                    // If no error, we can query the table
+                    if (!testError) {
+                        // Count active orders
+                        try {
+                            const { data: activeData, error: activeError } = await supabaseClient
+                                .from('service_records')
+                                .select('id')
+                                .eq('service_state', 'in_progress');
+                                
+                            if (!activeError && activeData) {
+                                document.getElementById('active-orders-count').textContent = activeData.length;
+                            }
+                        } catch (e) {
+                            console.warn('Error counting active orders:', e);
+                        }
+                        
+                        // Count completed orders this month
+                        try {
+                            const currentDate = new Date();
+                            const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString();
+                            
+                            const { data: completedData, error: completedError } = await supabaseClient
+                                .from('service_records')
+                                .select('id')
+                                .eq('service_state', 'completed')
+                                .gte('completion_date', firstDayOfMonth);
+                                
+                            if (!completedError && completedData) {
+                                document.getElementById('completed-orders-count').textContent = completedData.length;
+                            }
+                        } catch (e) {
+                            console.warn('Error counting completed orders:', e);
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Error checking service_records table:', e);
+                }
+                
+                // Try to get customer count
+                try {
+                    const { data: customerTest, error: customerTestError } = await supabaseClient
+                        .from('customers')
+                        .select('id')
+                        .limit(1);
+                        
+                    if (!customerTestError) {
+                        const { data: customers, error: customersError } = await supabaseClient
+                            .from('customers')
+                            .select('id');
+                            
+                        if (!customersError && customers) {
+                            document.getElementById('total-customers-count').textContent = customers.length;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Error checking customers table:', e);
+                }
+                
+                // Try to get followup count
+                try {
+                    const { data: followupTest, error: followupTestError } = await supabaseClient
+                        .from('service_records')
+                        .select('requires_followup')
+                        .limit(1);
+                        
+                    // Check if requires_followup column exists
+                    if (!followupTestError && followupTest.length > 0 && 'requires_followup' in followupTest[0]) {
+                        const { data: followupData, error: followupError } = await supabaseClient
+                            .from('service_records')
+                            .select('id')
+                            .eq('requires_followup', true)
+                            .is('followup_completed', null);
+                            
+                        if (!followupError && followupData) {
+                            document.getElementById('pending-followups-count').textContent = followupData.length;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Error checking followups:', e);
+                }
+                
+                console.log('Summary statistics loaded successfully');
+            } catch (error) {
+                console.error('Error loading summary stats:', error);
+                // Continue with zeros (already set as defaults)
+            }
+        }
+        
+        // Load reminders and followups
+        async function loadRemindersAndFollowups() {
+            try {
+                console.log('Loading reminders and followups');
+                const container = document.getElementById('reminders-container');
+                container.innerHTML = '';
+                
+                // Get PUC/Insurance renewals due in the next 30 days
+                const today = new Date();
+                const thirtyDaysFromNow = new Date(today);
+                thirtyDaysFromNow.setDate(today.getDate() + 30);
+                
+                let vehicles = [];
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('vehicles')
+                        .select('*, customers(*)');
+                        
+                    if (!error && data) {
+                        // Filter for vehicles with upcoming renewals
+                        vehicles = data.filter(vehicle => {
+                            if (!vehicle) return false;
+                            
+                            const insuranceExpiry = vehicle.insurance_expiry ? new Date(vehicle.insurance_expiry) : null;
+                            const pucExpiry = vehicle.puc_expiry ? new Date(vehicle.puc_expiry) : null;
+                            
+                            return (insuranceExpiry && insuranceExpiry <= thirtyDaysFromNow) || 
+                                   (pucExpiry && pucExpiry <= thirtyDaysFromNow);
+                        });
+                    } else {
+                        console.warn('Could not fetch vehicles for reminders');
+                    }
+                } catch (e) {
+                    console.warn('Error fetching vehicles with upcoming renewals:', e);
+                }
+                
+                // Get service records requiring followup
+                let followups = [];
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('service_records')
+                        .select('*, vehicles(*)');
+                        
+                    if (!error && data) {
+                        // Filter for records requiring followup
+                        followups = data.filter(record => 
+                            record && record.requires_followup === true && !record.followup_completed);
+                    } else {
+                        console.warn('Could not fetch followups');
+                    }
+                } catch (e) {
+                    console.warn('Error fetching followups:', e);
+                }
+                
+                // Render PUC/Insurance reminders
+                if (vehicles && vehicles.length) {
+                    vehicles.forEach(vehicle => {
+                        if (!vehicle) return;
+                        
+                        const customerName = vehicle.customers ? vehicle.customers.name : 'Unknown';
+                        const vehicleName = `${vehicle.make} ${vehicle.model}`;
+                        const regNo = vehicle.registration_number;
+                        
+                        // Check PUC
+                        if (vehicle.puc_expiry) {
+                            const pucExpiry = new Date(vehicle.puc_expiry);
+                            if (pucExpiry <= thirtyDaysFromNow) {
+                                const daysRemaining = Math.ceil((pucExpiry - today) / (1000 * 60 * 60 * 24));
+                                const reminderDiv = document.createElement('div');
+                                reminderDiv.className = 'reminder-item p-3 border-l-4 border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 rounded-r-lg';
+                                
+                                reminderDiv.innerHTML = `
+                                    <div class="font-medium">PUC Renewal</div>
+                                    <div class="text-sm text-muted">${vehicleName} (${regNo})</div>
+                                    <div class="text-xs ${daysRemaining <= 7 ? 'text-red-500' : 'text-yellow-500'} mt-1">
+                                        ${daysRemaining <= 0 ? 'Expired' : `Due in ${daysRemaining} days`}
+                                    </div>
+                                `;
+                                
+                                container.appendChild(reminderDiv);
+                            }
+                        }
+                        
+                        // Check Insurance
+                        if (vehicle.insurance_expiry) {
+                            const insuranceExpiry = new Date(vehicle.insurance_expiry);
+                            if (insuranceExpiry <= thirtyDaysFromNow) {
+                                const daysRemaining = Math.ceil((insuranceExpiry - today) / (1000 * 60 * 60 * 24));
+                                const reminderDiv = document.createElement('div');
+                                reminderDiv.className = 'reminder-item p-3 border-l-4 border-green-400 bg-green-50 dark:bg-green-900/20 rounded-r-lg';
+                                
+                                reminderDiv.innerHTML = `
+                                    <div class="font-medium">Insurance Renewal</div>
+                                    <div class="text-sm text-muted">${vehicleName} (${regNo})</div>
+                                    <div class="text-xs ${daysRemaining <= 7 ? 'text-red-500' : 'text-green-500'} mt-1">
+                                        ${daysRemaining <= 0 ? 'Expired' : `Due in ${daysRemaining} days`}
+                                    </div>
+                                `;
+                                
+                                container.appendChild(reminderDiv);
+                            }
+                        }
+                    });
+                }
+                
+                // Render followup reminders
+                if (followups && followups.length) {
+                    followups.forEach(followup => {
+                        if (!followup || !followup.vehicles) return;
+                        
+                        const vehicle = followup.vehicles;
+                        const vehicleName = `${vehicle.make} ${vehicle.model}`;
+                        const regNo = vehicle.registration_number;
+                        
+                        const reminderDiv = document.createElement('div');
+                        reminderDiv.className = 'reminder-item p-3 border-l-4 border-blue-400 bg-blue-50 dark:bg-blue-900/20 rounded-r-lg';
+                        
+                        reminderDiv.innerHTML = `
+                            <div class="font-medium">Followup Call</div>
+                            <div class="text-sm text-muted">${vehicleName} (${regNo})</div>
+                            <div class="text-xs text-blue-500 mt-1">Today</div>
+                        `;
+                        
+                        container.appendChild(reminderDiv);
+                    });
+                }
+                
+                // If no reminders, show message
+                if (container.children.length === 0) {
+                    container.innerHTML = `
+                        <div class="p-3 bg-gray-50 dark:bg-gray-800/30 rounded-lg text-center">
+                            <p class="text-gray-500 dark:text-gray-400">No pending reminders</p>
+                        </div>
+                    `;
+                }
+                
+                console.log('Reminders and followups loaded successfully');
+            } catch (error) {
+                console.error('Error loading reminders and followups:', error);
+                // Don't throw the error, just show an empty state
+                document.getElementById('reminders-container').innerHTML = `
+                    <div class="p-3 bg-gray-50 dark:bg-gray-800/30 rounded-lg text-center">
+                        <p class="text-gray-500 dark:text-gray-400">Could not load reminders</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Fix the loadKanbanData function to handle database errors better
+        async function loadKanbanData() {
+            try {
+                console.log('Loading kanban board data');
+                
+                // Ensure all containers exist before trying to clear them
+                const containerIds = [
+                    'upcoming-vehicles', 
+                    'third-party-vehicles', 
+                    'dealership-vehicles', 
+                    'non-workshop-vehicles',
+                    'payment-pending-vehicles',
+                    'completed-vehicles'
+                ];
+                
+                // Create containers if they don't exist
+                containerIds.forEach(id => {
+                    const container = document.getElementById(id);
+                    if (!container) {
+                        console.warn(`Container ${id} not found, skipping`);
+                    } else {
+                        container.innerHTML = '';
+                    }
+                });
+                
+                // Update counts to zero initially
+                const countIds = [
+                    'upcoming-count', 
+                    'third-party-count', 
+                    'dealership-count', 
+                    'non-workshop-count',
+                    'payment-pending-count',
+                    'completed-column-count'
+                ];
+                
+                countIds.forEach(id => {
+                    const countElement = document.getElementById(id);
+                    if (countElement) {
+                        countElement.textContent = '0';
+                    }
+                });
+                
+                // Check if service_records table exists
+                let serviceRecords = [];
+                try {
+                    // Simple query first to check if we can access the table at all
+                    const { data, error } = await supabaseClient
+                        .from('service_records')
+                        .select('id')
+                        .limit(1);
+                        
+                    if (!error) {
+                        console.log('Service records table exists, fetching data');
+                        
+                        // If basic query succeeds, try getting all records with minimal fields
+                        try {
+                            const { data: allRecords, error: fetchError } = await supabaseClient
+                                .from('service_records')
+                                .select('id, service_type, service_date, completion_date, service_state, vehicle_id, customer_name, vehicle_make, vehicle_model, registration_number, garage_name');
+                            
+                            if (!fetchError && allRecords) {
+                                serviceRecords = allRecords;
+                                console.log(`Found ${serviceRecords.length} service records`);
+                            }
+                        } catch (fetchError) {
+                            console.error('Error fetching service records:', fetchError);
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Error accessing service_records table:', e);
+                }
+                
+                // Process the records - using safety checks for all field access
+                if (serviceRecords && serviceRecords.length > 0) {
+                    // Group by status using safe fallbacks
+                    const getStatus = (record) => {
+                        return record.service_state || record.status || 'unknown';
+                    };
+                    
+                    const getLocation = (record) => {
+                        // If location column doesn't exist, infer from status
+                        if (record.location) return record.location;
+                        
+                        const status = getStatus(record);
+                        if (status === 'scheduled' || status === 'pending') return 'upcoming';
+                        if (status === 'completed') return 'completed';
+                        return 'workshop'; // Default fallback
+                    };
+                    
+                    // Create the different status collections with safer categorization
+                    const upcomingVehicles = serviceRecords.filter(record => {
+                        const status = getStatus(record);
+                        return status === 'scheduled' || status === 'pending';
+                    });
+                    
+                    const thirdPartyVehicles = serviceRecords.filter(record => {
+                        const status = getStatus(record);
+                        const location = getLocation(record);
+                        return (status === 'in_progress' || status === 'active') && 
+                              (location === 'third_party' || location === 'garage');
+                    });
+                    
+                    const dealershipVehicles = serviceRecords.filter(record => {
+                        const status = getStatus(record);
+                        const location = getLocation(record);
+                        return (status === 'in_progress' || status === 'active') && 
+                              (location === 'dealership');
+                    });
+                    
+                    const nonWorkshopVehicles = serviceRecords.filter(record => {
+                        const status = getStatus(record);
+                        const location = getLocation(record);
+                        return (status === 'in_progress' || status === 'active') && 
+                              (location === 'non_workshop');
+                    });
+                    
+                    const paymentPendingVehicles = serviceRecords.filter(record => {
+                        const status = getStatus(record);
+                        const location = getLocation(record);
+                        return status === 'completed' && location === 'payment_pending';
+                    });
+                    
+                    const completedVehicles = serviceRecords.filter(record => {
+                        const status = getStatus(record);
+                        const location = getLocation(record);
+                        return status === 'completed' && location === 'completed';
+                    });
+                    
+                    // Safe render to containers, only if they exist
+                    const containers = [
+                        { id: 'upcoming-vehicles', records: upcomingVehicles, label: 'Upcoming' },
+                        { id: 'third-party-vehicles', records: thirdPartyVehicles, label: 'Ongoing Third Party' },
+                        { id: 'dealership-vehicles', records: dealershipVehicles, label: 'Ongoing Dealership' },
+                        { id: 'non-workshop-vehicles', records: nonWorkshopVehicles, label: 'Non Workshop Active' },
+                        { id: 'payment-pending-vehicles', records: paymentPendingVehicles, label: 'Payment Pending' },
+                        { id: 'completed-vehicles', records: completedVehicles, label: 'Completed' }
+                    ];
+                    
+                    containers.forEach(({ id, records, label }) => {
+                        const container = document.getElementById(id);
+                        if (container) {
+                            renderVehiclesToContainer(id, records, label);
+                            
+                            // Update count
+                            const countId = id.replace('vehicles', 'count');
+                            if (id === 'completed-vehicles') {
+                                const countElement = document.getElementById('completed-column-count');
+                                if (countElement) countElement.textContent = records.length;
+                            } else {
+                                const countElement = document.getElementById(countId);
+                                if (countElement) countElement.textContent = records.length;
+                            }
+                        }
+                    });
+                } else {
+                    console.log('No service records found, showing empty states');
+                    // Ensure empty state messages are shown in all containers
+                    containerIds.forEach(id => {
+                        const container = document.getElementById(id);
+                        if (container) {
+                            container.innerHTML = `<div class="p-3 bg-gray-700 rounded-lg text-center text-gray-300">No vehicles</div>`;
+                        }
+                    });
+                }
+                
+                console.log('Kanban board data loaded successfully');
+            } catch (error) {
+                console.error('Error loading kanban board data:', error);
+                // Show error message to user
+                showErrorMessage('Failed to load kanban board data. Please check the console for details.');
+            }
+        }
+        
+        // Function to update record status in database
+        async function updateRecordStatus(recordId, newStatus) {
+            try {
+                // Map column names to service_state and location values
+                let serviceState, location;
+                
+                switch (newStatus) {
+                    case 'upcoming':
+                        serviceState = 'scheduled';
+                        location = 'upcoming';
+                        break;
+                    case 'third-party':
+                        serviceState = 'in_progress';
+                        location = 'third_party';
+                        break;
+                    case 'dealership':
+                        serviceState = 'in_progress';
+                        location = 'dealership';
+                        break;
+                    case 'non-workshop':
+                        serviceState = 'in_progress';
+                        location = 'non_workshop';
+                        break;
+                    case 'payment-pending':
+                        serviceState = 'completed';
+                        location = 'payment_pending';
+                        break;
+                    case 'completed':
+                        serviceState = 'completed';
+                        location = 'completed';
+                        break;
+                    default:
+                        serviceState = 'in_progress';
+                        location = 'workshop';
+                }
+                
+                // Check if location column exists first with a select query
+                const { data: locationCheck, error: locationError } = await supabaseClient
+                    .from('service_records')
+                    .select('location')
+                    .limit(1);
+                    
+                const hasLocationColumn = !locationError;
+                
+                // Update with only the columns that exist
+                const updateData = {
+                    service_state: serviceState,
+                    updated_at: new Date().toISOString()
+                };
+                
+                // Only add location if the column exists
+                if (hasLocationColumn) {
+                    updateData.location = location;
+                }
+                
+                const { data, error } = await supabaseClient
+                    .from('service_records')
+                    .update(updateData)
+                    .eq('id', recordId);
+                    
+                if (error) {
+                    console.error('Error updating record status:', error);
+                    showErrorMessage('Failed to update status. Database error.');
+                }
+            } catch (error) {
+                console.error('Error in updateRecordStatus:', error);
+                showErrorMessage('Failed to update record status.');
+            }
+        }
+
+        // Modify the renderVehiclesToContainer function to include the status toggle and make cards draggable
+        function renderVehiclesToContainer(containerId, serviceRecords, statusLabel) {
+            const container = document.getElementById(containerId);
+            
+            // If no records, keep the "No vehicles" message
+            if (!serviceRecords || serviceRecords.length === 0) return;
+            
+            // Clear container first
+            container.innerHTML = '';
+            
+            // Render all vehicles (or first few with a "View More" link)
+            const maxToShow = 10; // Show more records
+            serviceRecords.slice(0, maxToShow).forEach(record => {
+                // Check if record has vehicles data directly or needs to be created from record data
+                const vehicle = record.vehicles || {
+                    id: record.vehicle_id,
+                    make: record.vehicle_make || 'Unknown Make',
+                    model: record.vehicle_model || 'Unknown Model',
+                    registration_number: record.registration_number || 'No Reg.',
+                    customers: record.customers || { name: record.customer_name || 'Unknown Customer' }
+                };
+                
+                const customerName = (vehicle.customers && vehicle.customers.name) ? 
+                    vehicle.customers.name : 'Unknown';
+                
+                const vehicleCard = document.createElement('div');
+                vehicleCard.className = 'task-card p-3 bg-gray-700 rounded-lg shadow-md border border-gray-600 hover:border-gray-400 transition-all';
+                vehicleCard.dataset.vehicleId = vehicle.id || 'unknown';
+                vehicleCard.dataset.recordId = record.id || 'unknown';
+                vehicleCard.dataset.currentStatus = statusLabel.toLowerCase().replace(' ', '-');
+                vehicleCard.draggable = true;
+                
+                let statusClass = '';
+                let statusBgClass = '';
+                switch(statusLabel) {
+                    case 'Upcoming': 
+                        statusClass = 'text-yellow-300'; 
+                        statusBgClass = 'bg-yellow-900/40'; 
+                        break;
+                    case 'Ongoing Third Party': 
+                        statusClass = 'text-blue-300'; 
+                        statusBgClass = 'bg-blue-900/40'; 
+                        break;
+                    case 'Ongoing Dealership': 
+                        statusClass = 'text-purple-300'; 
+                        statusBgClass = 'bg-purple-900/40'; 
+                        break;
+                    case 'Non Workshop Active': 
+                        statusClass = 'text-orange-300'; 
+                        statusBgClass = 'bg-orange-900/40'; 
+                        break;
+                    case 'Payment Pending':
+                        statusClass = 'text-red-300';
+                        statusBgClass = 'bg-red-900/40';
+                        break;
+                    case 'Completed':
+                        statusClass = 'text-green-300';
+                        statusBgClass = 'bg-green-900/40';
+                        break;
+                    default: statusClass = ''; statusBgClass = '';
+                }
+                
+                // Get date info for display
+                const serviceDate = record.service_date ? new Date(record.service_date) : null;
+                const formattedDate = serviceDate ? serviceDate.toLocaleDateString() : 'No date';
+                
+                // For third party, add garage name if available
+                const extraInfo = (statusLabel === 'Ongoing Third Party' && record.garage_name) ?
+                    `<div class="text-xs text-purple-300 bg-purple-900/30 px-2 py-1 rounded mb-2">${record.garage_name}</div>` : '';
+                
+                vehicleCard.innerHTML = `
+                    ${extraInfo}
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="font-medium text-white text-lg">${vehicle.make} ${vehicle.model}</div>
+                        <span class="text-xs ${statusClass} ${statusBgClass} px-2 py-1 rounded-full">${statusLabel || 'Status'}</span>
+                    </div>
+                    <div class="flex items-center mb-2">
+                        <svg class="w-4 h-4 text-gray-400 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                        </svg>
+                        <div class="text-sm text-gray-300 font-medium">${vehicle.registration_number}</div>
+                    </div>
+                    <div class="flex items-center mb-2">
+                        <svg class="w-4 h-4 text-gray-400 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        <div class="text-xs text-gray-400">${customerName}</div>
+                    </div>
+                    <div class="flex items-center mb-3">
+                        <svg class="w-4 h-4 text-gray-400 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <div class="text-xs text-gray-400">${formattedDate}</div>
+                    </div>
+                    <div class="pt-2 border-t border-gray-600">
+                        <select class="status-select" aria-label="Change status">
+                            <option value="upcoming" ${statusLabel === 'Upcoming' ? 'selected' : ''}>Upcoming</option>
+                            <option value="third-party" ${statusLabel === 'Ongoing Third Party' ? 'selected' : ''}>Third Party</option>
+                            <option value="dealership" ${statusLabel === 'Ongoing Dealership' ? 'selected' : ''}>Dealership</option>
+                            <option value="non-workshop" ${statusLabel === 'Non Workshop Active' ? 'selected' : ''}>Non Workshop</option>
+                            <option value="payment-pending" ${statusLabel === 'Payment Pending' ? 'selected' : ''}>Payment Pending</option>
+                            <option value="completed" ${statusLabel === 'Completed' ? 'selected' : ''}>Completed</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center justify-between mt-2 pt-2 border-t border-gray-600">
+                        <span class="text-xs ${statusClass} px-2 py-0.5 rounded">${record.service_type || 'Service'}</span>
+                        <div class="flex space-x-2">
+                            <button class="view-details-btn text-xs bg-gray-600 hover:bg-blue-700 text-white px-2 py-1 rounded transition-colors" data-vehicle-id="${vehicle.id || ''}">View</button>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(vehicleCard);
+                
+                // Add status change event listener
+                const statusSelect = vehicleCard.querySelector('.status-select');
+                statusSelect.addEventListener('change', (e) => {
+                    e.stopPropagation();
+                    const newStatus = e.target.value;
+                    moveCardToColumn(vehicleCard, newStatus);
+                });
+                
+                // Add drag event listeners to make the card draggable
+                vehicleCard.addEventListener('dragstart', handleDragStart);
+                vehicleCard.addEventListener('dragend', handleDragEnd);
+                
+                // Add click handler to open vehicle details modal when clicking on the card
+                vehicleCard.addEventListener('click', function(e) {
+                    // Don't trigger if clicking on controls (dropdown, buttons)
+                    if (e.target.closest('.status-select') || e.target.closest('button')) {
+                        return;
+                    }
+                    
+                    const vehicleId = this.dataset.vehicleId;
+                    const recordId = this.dataset.recordId;
+                    
+                    // Open the vehicle details modal
+                    openVehicleDetailsModal(vehicleId, recordId);
+                });
+            });
+            
+            // Add "View More" link if there are more than maxToShow records
+            if (serviceRecords.length > maxToShow) {
+                const viewMoreLink = document.createElement('div');
+                viewMoreLink.className = 'view-more-link text-center mt-2';
+                viewMoreLink.innerHTML = `<a href="#" class="text-blue-300 text-sm hover:text-blue-100 bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded inline-block">View ${serviceRecords.length - maxToShow} more</a>`;
+                container.appendChild(viewMoreLink);
+            }
+            
+            // Add view details functionality
+            container.querySelectorAll('.view-details-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const vehicleId = button.dataset.vehicleId;
+                    if (vehicleId) {
+                        // Open the vehicle details modal instead of navigating to another page
+                        const recordId = button.closest('.task-card').dataset.recordId;
+                        openVehicleDetailsModal(vehicleId, recordId);
+                    } else {
+                        alert('Vehicle ID not available');
+                    }
+                });
+            });
+        }
+
+        // Function to move a card to a different column
+        function moveCardToColumn(card, newColumn) {
+            const targetColumn = document.querySelector(`.vehicle-drop-zone[data-column="${newColumn}"]`);
+            if (!targetColumn) return;
+            
+            // Get the empty message element if it exists
+            const emptyMessage = targetColumn.querySelector('.text-center.text-gray-300');
+            if (emptyMessage) {
+                targetColumn.removeChild(emptyMessage);
+            }
+            
+            // Update the card's status select dropdown
+            const statusSelect = card.querySelector('.status-select');
+            if (statusSelect) {
+                statusSelect.value = newColumn;
+            }
+            
+            // Add the card to the target column
+            targetColumn.appendChild(card);
+            
+            // Update record in database
+            const recordId = card.dataset.recordId;
+            if (recordId && recordId !== 'unknown') {
+                updateRecordStatus(recordId, newColumn);
+            }
+            
+            // Update counts
+            updateColumnCounts();
+        }
+
+        // Function to update status in database
+        async function updateRecordStatus(recordId, newStatus) {
+            try {
+                // Map column names to service_state and location values
+                let serviceState, location;
+                
+                switch (newStatus) {
+                    case 'upcoming':
+                        serviceState = 'scheduled';
+                        location = 'upcoming';
+                        break;
+                    case 'third-party':
+                        serviceState = 'in_progress';
+                        location = 'third_party';
+                        break;
+                    case 'dealership':
+                        serviceState = 'in_progress';
+                        location = 'dealership';
+                        break;
+                    case 'non-workshop':
+                        serviceState = 'in_progress';
+                        location = 'non_workshop';
+                        break;
+                    case 'payment-pending':
+                        serviceState = 'completed';
+                        location = 'payment_pending';
+                        break;
+                    case 'completed':
+                        serviceState = 'completed';
+                        location = 'completed';
+                        break;
+                    default:
+                        serviceState = 'in_progress';
+                        location = 'workshop';
+                }
+                
+                const { data, error } = await supabaseClient
+                    .from('service_records')
+                    .update({
+                        service_state: serviceState,
+                        location: location,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', recordId);
+                    
+                if (error) {
+                    console.error('Error updating record status:', error);
+                    // If update fails, we could show an error message or revert the change
+                }
+            } catch (error) {
+                console.error('Error in updateRecordStatus:', error);
+            }
+        }
+
+        // Function to update column counts
+        function updateColumnCounts() {
+            document.querySelectorAll('.vehicle-drop-zone').forEach(column => {
+                const columnName = column.dataset.column;
+                const count = column.querySelectorAll('.task-card').length;
+                
+                // Find the corresponding count span and update it
+                let countSpan;
+                switch (columnName) {
+                    case 'upcoming':
+                        countSpan = document.getElementById('upcoming-count');
+                        break;
+                    case 'third-party':
+                        countSpan = document.getElementById('third-party-count');
+                        break;
+                    case 'dealership':
+                        countSpan = document.getElementById('dealership-count');
+                        break;
+                    case 'non-workshop':
+                        countSpan = document.getElementById('non-workshop-count');
+                        break;
+                    case 'payment-pending':
+                        countSpan = document.getElementById('payment-pending-count');
+                        break;
+                    case 'completed':
+                        countSpan = document.getElementById('completed-column-count');
+                        break;
+                }
+                
+                if (countSpan) {
+                    countSpan.textContent = count;
+                }
+            });
+        }
+
+        // Drag and Drop Functions
+        let draggedElement = null;
+
+        function handleDragStart(e) {
+            draggedElement = this;
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', this.innerHTML);
+            this.classList.add('dragging');
+            
+            // Add the drag over event listener to all drop zones
+            document.querySelectorAll('.vehicle-drop-zone').forEach(dropZone => {
+                dropZone.addEventListener('dragover', handleDragOver);
+                dropZone.addEventListener('dragenter', handleDragEnter);
+                dropZone.addEventListener('dragleave', handleDragLeave);
+                dropZone.addEventListener('drop', handleDrop);
+            });
+        }
+
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+            
+            // Remove drag over event listeners
+            document.querySelectorAll('.vehicle-drop-zone').forEach(dropZone => {
+                dropZone.removeEventListener('dragover', handleDragOver);
+                dropZone.removeEventListener('dragenter', handleDragEnter);
+                dropZone.removeEventListener('dragleave', handleDragLeave);
+                dropZone.removeEventListener('drop', handleDrop);
+                dropZone.classList.remove('drag-over', 'drop-ready');
+            });
+            
+            draggedElement = null;
+        }
+
+        function handleDragOver(e) {
+            if (e.preventDefault) {
+                e.preventDefault();
+            }
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
+
+        function handleDragEnter(e) {
+            this.classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            this.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            if (e.stopPropagation) {
+                e.stopPropagation();
+            }
+            
+            if (draggedElement) {
+                // Move card to new column
+                const newColumn = this.dataset.column;
+                moveCardToColumn(draggedElement, newColumn);
+            }
+            
+            this.classList.remove('drag-over');
+            return false;
+        }
+
+        // Setup add buttons
+        function setupAddButtons() {
+            const addButtons = document.querySelectorAll('.add-vehicle-btn');
+            
+            addButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const columnTitle = this.closest('.kanban-section').querySelector('h4').textContent.trim().split(' ')[0];
+                    console.log(`Adding new vehicle to ${columnTitle}`);
+                    
+                    // Set appropriate default based on the column
+                    const jobStatus = document.getElementById('job-status');
+                    if (jobStatus) {
+                        if (columnTitle === 'Upcoming') {
+                            jobStatus.value = 'scheduled';
+                        } else {
+                            jobStatus.value = 'in_progress';
+                        }
+                    }
+                    
+                    // Show the job sheet modal
+                    const jobSheetModal = document.getElementById('job-sheet-modal');
+                    if (jobSheetModal) {
+                        jobSheetModal.classList.remove('hidden');
+                    } else {
+                        console.error('Job sheet modal not found');
+                    }
+                });
+            });
+        }
+
+        // Initialize drag and drop
+        document.addEventListener('DOMContentLoaded', function() {
+            setupAddButtons();
+            
+            // Initialize drop zones
+            document.querySelectorAll('.vehicle-drop-zone').forEach(dropZone => {
+                // These event listeners are added when an item starts being dragged
+            });
+        });
+        
+        // Setup Quick Action Buttons
+        function setupQuickActionButtons() {
+            const quickActionButtons = document.querySelectorAll('.quick-actions button');
+            quickActionButtons.forEach(button => {
+                button.addEventListener('mouseenter', function() {
+                    this.classList.add('scale-105');
+                    this.classList.add('shadow-md');
+                });
+                
+                button.addEventListener('mouseleave', function() {
+                    this.classList.remove('scale-105');
+                    this.classList.remove('shadow-md');
+                });
+            });
+        }
+        
+        // Show error message
+        function showErrorMessage(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+            errorDiv.textContent = message;
+            
+            document.body.appendChild(errorDiv);
+            
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 5000);
+        }
+
+        // Job Sheet Modal Functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Modal Elements
+            const jobSheetModal = document.getElementById('job-sheet-modal');
+            const closeJobSheetBtn = document.getElementById('close-job-sheet-modal');
+            const addJobBtns = document.querySelectorAll('.add-job-btn');
+            
+            // Tab Elements
+            const customerNotesTab = document.getElementById('customer-notes-tab');
+            const orderTab = document.getElementById('order-tab');
+            const customerNotesContent = document.getElementById('customer-notes-content');
+            const orderContent = document.getElementById('order-content');
+            
+            // Customer Search Elements
+            const customerSearch = document.getElementById('customer-search');
+            const customerSearchResults = document.getElementById('customer-search-results');
+            const selectedCustomer = document.getElementById('selected-customer');
+            const vehicleSelect = document.getElementById('vehicle-select');
+            
+            // Notes Elements
+            const newNoteInput = document.getElementById('new-note');
+            const addNoteBtn = document.getElementById('add-note-btn');
+            const notesList = document.getElementById('notes-list');
+            
+            // Order Elements
+            const jobTemplate = document.getElementById('job-template');
+            const addJobBtn = document.getElementById('add-job-btn');
+            const jobsContainer = document.getElementById('jobs-container');
+            
+            // Show modal when an Add button is clicked
+            addJobBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // Get the column title to set appropriate default status
+                    const columnTitle = this.closest('.kanban-container').querySelector('h4').textContent.trim();
+                    
+                    // Set appropriate default based on the column
+                    const jobStatus = document.getElementById('job-status');
+                    if (columnTitle.includes('Upcoming')) {
+                        jobStatus.value = 'scheduled';
+                    } else {
+                        jobStatus.value = 'in_progress';
+                    }
+                    
+                    // Show the modal
+                    jobSheetModal.classList.remove('hidden');
+                });
+            });
+            
+            // Close modal when close button is clicked
+            closeJobSheetBtn.addEventListener('click', function() {
+                jobSheetModal.classList.add('hidden');
+            });
+            
+            // Close modal when clicking outside the content
+            jobSheetModal.addEventListener('click', function(e) {
+                if (e.target === jobSheetModal || e.target === jobSheetModal.firstElementChild) {
+                    jobSheetModal.classList.add('hidden');
+                }
+            });
+            
+            // Tab switching
+            customerNotesTab.addEventListener('click', function() {
+                // Set active tab
+                customerNotesTab.classList.add('border-blue-500');
+                orderTab.classList.remove('border-blue-500');
+                customerNotesTab.classList.remove('border-transparent');
+                orderTab.classList.add('border-transparent');
+                
+                // Show/hide content
+                customerNotesContent.classList.remove('hidden');
+                orderContent.classList.add('hidden');
+            });
+            
+            orderTab.addEventListener('click', function() {
+                // Set active tab
+                orderTab.classList.add('border-blue-500');
+                customerNotesTab.classList.remove('border-blue-500');
+                orderTab.classList.remove('border-transparent');
+                customerNotesTab.classList.add('border-transparent');
+                
+                // Show/hide content
+                orderContent.classList.remove('hidden');
+                customerNotesContent.classList.add('hidden');
+            });
+            
+            // Customer search functionality
+            customerSearch.addEventListener('input', async function() {
+                const query = this.value.trim();
+                
+                if (query.length < 3) {
+                    customerSearchResults.classList.add('hidden');
+                    return;
+                }
+                
+                try {
+                    // Use the CustomerDB from supabase-db.js
+                    const customers = await window.CustomerDB.searchCustomers(query);
+                    
+                    if (customers && customers.length > 0) {
+                        customerSearchResults.innerHTML = '';
+                        
+                        customers.forEach(customer => {
+                            const customerElement = document.createElement('div');
+                            customerElement.className = 'p-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer';
+                            customerElement.innerHTML = `
+                                <div class="font-medium">${customer.name}</div>
+                                <div class="text-sm text-gray-500 dark:text-gray-400">${customer.phone || 'No phone'}</div>
+                            `;
+                            
+                            customerElement.addEventListener('click', function() {
+                                // Set selected customer
+                                selectCustomer(customer);
+                                // Hide search results
+                                customerSearchResults.classList.add('hidden');
+                                // Clear search input
+                                customerSearch.value = '';
+                            });
+                            
+                            customerSearchResults.appendChild(customerElement);
+                        });
+                        
+                        customerSearchResults.classList.remove('hidden');
+                    } else {
+                        customerSearchResults.innerHTML = '<div class="p-3 text-gray-500 dark:text-gray-400">No customers found</div>';
+                        customerSearchResults.classList.remove('hidden');
+                    }
+                } catch (error) {
+                    console.error('Error searching customers:', error);
+                    customerSearchResults.innerHTML = '<div class="p-3 text-red-500">Error searching customers</div>';
+                    customerSearchResults.classList.remove('hidden');
+                }
+            });
+            
+            // Select customer function
+            async function selectCustomer(customer) {
+                selectedCustomer.innerHTML = `
+                    <div class="flex justify-between">
+                        <div>
+                            <div class="font-medium">${customer.name}</div>
+                            <div class="text-sm">${customer.phone || 'No phone'}</div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400">${customer.address || 'No address'}</div>
+                        </div>
+                        <button id="change-customer-btn" class="text-blue-500 hover:text-blue-700 dark:hover:text-blue-300">Change</button>
+                    </div>
+                `;
+                
+                selectedCustomer.classList.remove('hidden');
+                
+                // Add event listener to change customer button
+                document.getElementById('change-customer-btn').addEventListener('click', function() {
+                    selectedCustomer.classList.add('hidden');
+                    vehicleSelect.innerHTML = '<option value="">Select a customer first</option>';
+                    customerSearch.focus();
+                });
+                
+                // Load customer vehicles
+                try {
+                    const vehicles = await window.VehicleDB.getVehiclesByCustomerId(customer.id);
+                    
+                    if (vehicles && vehicles.length > 0) {
+                        vehicleSelect.innerHTML = '<option value="">Select a vehicle</option>';
+                        
+                        vehicles.forEach(vehicle => {
+                            const option = document.createElement('option');
+                            option.value = vehicle.id;
+                            option.textContent = `${vehicle.make} ${vehicle.model} (${vehicle.registration_number})`;
+                            vehicleSelect.appendChild(option);
+                        });
+                    } else {
+                        vehicleSelect.innerHTML = '<option value="">No vehicles found for this customer</option>';
+                    }
+                } catch (error) {
+                    console.error('Error loading customer vehicles:', error);
+                    vehicleSelect.innerHTML = '<option value="">Error loading vehicles</option>';
+                }
+            }
+            
+            // Add note functionality
+            addNoteBtn.addEventListener('click', function() {
+                const noteText = newNoteInput.value.trim();
+                
+                if (noteText) {
+                    // If first note, clear the "no notes" message
+                    if (notesList.querySelector('.text-gray-500')) {
+                        notesList.innerHTML = '';
+                    }
+                    
+                    const noteElement = document.createElement('div');
+                    noteElement.className = 'flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg';
+                    noteElement.innerHTML = `
+                        <input type="checkbox" class="mr-3 w-5 h-5">
+                        <span class="flex-1">${noteText}</span>
+                        <button class="delete-note-btn text-red-500 hover:text-red-700">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                        </button>
+                    `;
+                    
+                    // Add event listener to delete button
+                    noteElement.querySelector('.delete-note-btn').addEventListener('click', function() {
+                        noteElement.remove();
+                        
+                        // If no more notes, show the "no notes" message
+                        if (notesList.children.length === 0) {
+                            notesList.innerHTML = `
+                                <div class="text-gray-500 dark:text-gray-400 text-center p-4">
+                                    No notes added yet
+                                </div>
+                            `;
+                        }
+                    });
+                    
+                    // Add event listener to checkbox
+                    noteElement.querySelector('input[type="checkbox"]').addEventListener('change', function() {
+                        if (this.checked) {
+                            noteElement.querySelector('span').style.textDecoration = 'line-through';
+                        } else {
+                            noteElement.querySelector('span').style.textDecoration = 'none';
+                        }
+                    });
+                    
+                    notesList.appendChild(noteElement);
+                    newNoteInput.value = '';
+                }
+            });
+            
+            // Job template functionality
+            jobTemplate.addEventListener('change', function() {
+                const template = this.value;
+                
+                if (template) {
+                    // Clear previous jobs
+                    jobsContainer.innerHTML = '';
+                    
+                    // Add template jobs
+                    switch (template) {
+                        case 'periodic':
+                            addJob('Engine Oil Replacement', 1500);
+                            addJob('Oil Filter Replacement', 500);
+                            addJob('Air Filter Check', 200);
+                            addJob('Coolant Level Check', 100);
+                            break;
+                        case 'oil':
+                            addJob('Engine Oil Replacement', 1500);
+                            addJob('Oil Filter Replacement', 500);
+                            break;
+                        case 'brake':
+                            addJob('Brake Pad Replacement (Front)', 2000);
+                            addJob('Brake Fluid Check', 300);
+                            break;
+                        case 'clutch':
+                            addJob('Clutch Plate Replacement', 5000);
+                            addJob('Pressure Plate Check', 1000);
+                            addJob('Flywheel Inspection', 500);
+                            break;
+                        case 'alignment':
+                            addJob('Four Wheel Alignment', 800);
+                            addJob('Balancing', 600);
+                            break;
+                    }
+                    
+                    updateTotal();
+                }
+            });
+            
+            // Add job button
+            addJobBtn.addEventListener('click', function() {
+                addJob('', 0, true);
+            });
+            
+            // Function to add a job
+            function addJob(description, price, isEditable = false) {
+                // If first job, clear the "no jobs" message
+                if (jobsContainer.querySelector('.text-gray-500')) {
+                    jobsContainer.innerHTML = '';
+                }
+                
+                const jobElement = document.createElement('div');
+                jobElement.className = 'job-item p-3 border border-gray-300 dark:border-gray-600 rounded-lg';
+                
+                if (isEditable) {
+                    jobElement.innerHTML = `
+                        <div class="flex flex-col md:flex-row md:items-center gap-2">
+                            <input type="text" placeholder="Job description" class="flex-1 p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-light-panel dark:bg-dark-panel text-light-text dark:text-dark-text">
+                            <div class="flex items-center">
+                                <span class="mr-2">₹</span>
+                                <input type="number" placeholder="Price" class="w-24 p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-light-panel dark:bg-dark-panel text-light-text dark:text-dark-text">
+                            </div>
+                            <button class="save-job-item-btn px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg">Save</button>
+                            <button class="delete-job-item-btn px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg">Delete</button>
+                        </div>
+                    `;
+                    
+                    // Add event listener to save button
+                    jobElement.querySelector('.save-job-item-btn').addEventListener('click', function() {
+                        const descInput = jobElement.querySelector('input[type="text"]');
+                        const priceInput = jobElement.querySelector('input[type="number"]');
+                        
+                        const desc = descInput.value.trim();
+                        const price = parseFloat(priceInput.value) || 0;
+                        
+                        if (desc) {
+                            // Replace with saved version
+                            jobElement.innerHTML = `
+                                <div class="flex justify-between items-center">
+                                    <div class="font-medium">${desc}</div>
+                                    <div class="flex items-center">
+                                        <span class="text-lg font-medium">₹${price.toFixed(2)}</span>
+                                        <button class="edit-job-item-btn ml-3 text-blue-500 hover:text-blue-700">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                            </svg>
+                                        </button>
+                                        <button class="delete-job-item-btn ml-1 text-red-500 hover:text-red-700">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                            
+                            // Add edit button functionality
+                            jobElement.querySelector('.edit-job-item-btn').addEventListener('click', function() {
+                                addJob(desc, price, true);
+                                jobElement.remove();
+                                updateTotal();
+                            });
+                            
+                            // Add delete button functionality
+                            jobElement.querySelector('.delete-job-item-btn').addEventListener('click', function() {
+                                jobElement.remove();
+                                
+                                // If no more jobs, show the "no jobs" message
+                                if (jobsContainer.children.length === 0) {
+                                    jobsContainer.innerHTML = `
+                                        <div class="text-gray-500 dark:text-gray-400 text-center p-4 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+                                            No jobs added yet. Click 'Add Job' to start.
+                                        </div>
+                                    `;
+                                }
+                                
+                                updateTotal();
+                            });
+                            
+                            updateTotal();
+                        }
+                    });
+                    
+                    // Add event listener to delete button
+                    jobElement.querySelector('.delete-job-item-btn').addEventListener('click', function() {
+                        jobElement.remove();
+                        
+                        // If no more jobs, show the "no jobs" message
+                        if (jobsContainer.children.length === 0) {
+                            jobsContainer.innerHTML = `
+                                <div class="text-gray-500 dark:text-gray-400 text-center p-4 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+                                    No jobs added yet. Click 'Add Job' to start.
+                                </div>
+                            `;
+                        }
+                        
+                        updateTotal();
+                    });
+                } else {
+                    jobElement.innerHTML = `
+                        <div class="flex justify-between items-center">
+                            <div class="font-medium">${description}</div>
+                            <div class="flex items-center">
+                                <span class="text-lg font-medium">₹${price.toFixed(2)}</span>
+                                <button class="edit-job-item-btn ml-3 text-blue-500 hover:text-blue-700">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                    </svg>
+                                </button>
+                                <button class="delete-job-item-btn ml-1 text-red-500 hover:text-red-700">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Add edit button functionality
+                    jobElement.querySelector('.edit-job-item-btn').addEventListener('click', function() {
+                        addJob(description, price, true);
+                        jobElement.remove();
+                        updateTotal();
+                    });
+                    
+                    // Add delete button functionality
+                    jobElement.querySelector('.delete-job-item-btn').addEventListener('click', function() {
+                        jobElement.remove();
+                        
+                        // If no more jobs, show the "no jobs" message
+                        if (jobsContainer.children.length === 0) {
+                            jobsContainer.innerHTML = `
+                                <div class="text-gray-500 dark:text-gray-400 text-center p-4 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+                                    No jobs added yet. Click 'Add Job' to start.
+                                </div>
+                            `;
+                        }
+                        
+                        updateTotal();
+                    });
+                }
+                
+                jobsContainer.appendChild(jobElement);
+                
+                // Focus on description input if editable
+                if (isEditable) {
+                    jobElement.querySelector('input[type="text"]').focus();
+                }
+            }
+            
+            // Function to update total
+            function updateTotal() {
+                let subtotal = 0;
+                
+                // Get all job items with prices
+                const jobItems = document.querySelectorAll('.job-item');
+                
+                jobItems.forEach(item => {
+                    const priceElement = item.querySelector('.text-lg');
+                    if (priceElement) {
+                        const priceText = priceElement.textContent;
+                        const price = parseFloat(priceText.replace('₹', '')) || 0;
+                        subtotal += price;
+                    }
+                });
+                
+                // Calculate tax and total
+                const tax = subtotal * 0.18;
+                const total = subtotal + tax;
+                
+                // Update display
+                document.getElementById('subtotal').textContent = `₹${subtotal.toFixed(2)}`;
+                document.getElementById('tax').textContent = `₹${tax.toFixed(2)}`;
+                document.getElementById('total').textContent = `₹${total.toFixed(2)}`;
+            }
+            
+            // Save job button
+            document.getElementById('save-job-btn').addEventListener('click', async function() {
+                // Gather all the job data
+                const selectedVehicleId = vehicleSelect.value;
+                const serviceType = document.getElementById('service-type').value;
+                const status = document.getElementById('job-status').value;
+                
+                if (!selectedVehicleId) {
+                    alert('Please select a vehicle');
+                    return;
+                }
+                
+                try {
+                    // Collect jobs
+                    const jobs = [];
+                    document.querySelectorAll('.job-item').forEach(item => {
+                        const descElement = item.querySelector('.font-medium');
+                        const priceElement = item.querySelector('.text-lg');
+                        
+                        if (descElement && priceElement) {
+                            const description = descElement.textContent;
+                            const priceText = priceElement.textContent;
+                            const price = parseFloat(priceText.replace('₹', '')) || 0;
+                            
+                            jobs.push({
+                                description,
+                                price
+                            });
+                        }
+                    });
+                    
+                    // Collect notes
+                    const notes = [];
+                    document.querySelectorAll('#notes-list .flex').forEach(item => {
+                        const noteText = item.querySelector('span').textContent;
+                        const isCompleted = item.querySelector('input[type="checkbox"]').checked;
+                        
+                        notes.push({
+                            text: noteText,
+                            completed: isCompleted
+                        });
+                    });
+                    
+                    // Create service record
+                    const serviceData = {
+                        vehicle_id: selectedVehicleId,
+                        service_type: serviceType,
+                        service_state: status,
+                        service_date: new Date().toISOString(),
+                        requires_followup: false,
+                        location: status === 'scheduled' ? 'upcoming' : 'workshop',
+                        notes: JSON.stringify({
+                            customerNotes: notes,
+                            jobs: jobs
+                        })
+                    };
+                    
+                    // Save to database
+                    const savedRecord = await window.saveServiceRecord(serviceData);
+                    
+                    if (savedRecord) {
+                        alert('Job saved successfully!');
+                        jobSheetModal.classList.add('hidden');
+                        
+                        // Refresh the kanban board
+                        await loadKanbanData();
+                    } else {
+                        alert('Error saving job');
+                    }
+                } catch (error) {
+                    console.error('Error saving job:', error);
+                    alert('Error saving job: ' + error.message);
+                }
+            });
+            
+            // Send estimate button
+            document.getElementById('send-estimate-btn').addEventListener('click', function() {
+                alert('Estimate functionality will be implemented soon!');
+            });
+        });
+
+        // Collapsible Completed Section for Kanban Board
+        function setupCompletedSectionToggle() {
+            const toggleBtn = document.getElementById('toggle-completed');
+            const completedSection = document.getElementById('completed-section');
+            const icon = document.getElementById('completed-toggle-icon');
+            let expanded = true;
+            if (toggleBtn && completedSection && icon) {
+                toggleBtn.addEventListener('click', function() {
+                    expanded = !expanded;
+                    if (expanded) {
+                        completedSection.style.display = '';
+                        icon.textContent = '▼';
+                    } else {
+                        completedSection.style.display = 'none';
+                        icon.textContent = '►';
+                    }
+                });
+            }
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            setupCompletedSectionToggle();
+        });
+
+        // Add a helper function to save service records with schema checking
+        // Place this before the closing </script> tag 
+        // This function checks the schema first and only includes fields that exist
+        async function saveServiceRecord(serviceData) {
+            try {
+                console.log('Saving service record:', serviceData);
+                
+                // First check what columns exist in the table
+                const { data: columnInfo, error: columnError } = await supabaseClient
+                    .from('service_records')
+                    .select('*')
+                    .limit(1);
+                    
+                if (columnError) {
+                    console.error('Error checking service_records schema:', columnError);
+                    showErrorMessage('Could not determine database schema. Please check your database connection.');
+                    return null;
+                }
+                
+                // Get a sample record to determine available columns
+                const sampleRecord = columnInfo[0] || {};
+                const availableColumns = Object.keys(sampleRecord);
+                console.log('Available columns:', availableColumns);
+                
+                // Create a filtered object with only the columns that exist in the table
+                const filteredData = {};
+                Object.keys(serviceData).forEach(key => {
+                    if (availableColumns.includes(key) || key === 'id') {
+                        filteredData[key] = serviceData[key];
+                    } else {
+                        console.warn(`Column '${key}' does not exist in the service_records table, skipping`);
+                    }
+                });
+                
+                // Always include these essential fields if they exist in the schema
+                if (availableColumns.includes('created_at') && !filteredData.created_at) {
+                    filteredData.created_at = new Date().toISOString();
+                }
+                
+                if (availableColumns.includes('updated_at')) {
+                    filteredData.updated_at = new Date().toISOString();
+                }
+                
+                // Insert the filtered data
+                const { data, error } = await supabaseClient
+                    .from('service_records')
+                    .insert(filteredData)
+                    .select();
+                    
+                if (error) {
+                    console.error('Error saving service record:', error);
+                    showErrorMessage('Failed to save service record. Database error.');
+                    throw error;
+                }
+                
+                console.log('Service record saved successfully:', data);
+                return data[0];
+            } catch (error) {
+                console.error('Error in saveServiceRecord:', error);
+                showErrorMessage('Failed to save service record.');
+                throw error;
+            }
+        }
+
+        // Override the global window.saveServiceRecord function to use our new implementation
+        window.saveServiceRecord = saveServiceRecord;
+
+        // Add this just before the closing </script> tag
+
+        // Function to open vehicle details modal
+        function openVehicleDetailsModal(vehicleId, recordId) {
+            const modal = document.getElementById('vehicle-details-modal');
+            if (!modal) return;
+            
+            // Reset modal content
+            document.getElementById('vehicle-customer-info').innerHTML = '<div class="animate-pulse h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>';
+            document.getElementById('vehicle-details-info').innerHTML = '<div class="animate-pulse h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>';
+            document.getElementById('notes-container').innerHTML = '';
+            
+            // Store the recordId for status updates
+            const statusSelect = document.getElementById('vehicle-status-select');
+            if (statusSelect && recordId) {
+                statusSelect.dataset.recordId = recordId;
+            }
+            
+            // Show the modal
+            modal.classList.remove('hidden');
+            
+            // Load vehicle data
+            loadVehicleDetails(vehicleId, recordId);
+        }
+
+        // Function to load vehicle details
+        async function loadVehicleDetails(vehicleId, recordId) {
+            try {
+                // First try to load the service record
+                let serviceRecord = null;
+                let vehicle = null;
+                let customer = null;
+                let notes = [];
+                
+                // Get the service record
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('service_records')
+                        .select('*')
+                        .eq('id', recordId)
+                        .single();
+                        
+                    if (!error && data) {
+                        serviceRecord = data;
+                        console.log('Service record loaded:', serviceRecord);
+                        
+                        // Parse notes if they exist
+                        if (serviceRecord.notes) {
+                            try {
+                                const notesData = JSON.parse(serviceRecord.notes);
+                                if (notesData && notesData.customerNotes) {
+                                    notes = notesData.customerNotes;
+                                }
+                            } catch (e) {
+                                console.warn('Failed to parse notes:', e);
+                            }
+                        }
+                        
+                        // Set the status
+                        const statusSelect = document.getElementById('vehicle-status-select');
+                        const location = serviceRecord.location || '';
+                        
+                        if (location === 'upcoming' || serviceRecord.service_state === 'scheduled') {
+                            statusSelect.value = 'upcoming';
+                        } else if (location === 'third_party') {
+                            statusSelect.value = 'third-party';
+                        } else if (location === 'dealership') {
+                            statusSelect.value = 'dealership';
+                        } else if (location === 'non_workshop') {
+                            statusSelect.value = 'non-workshop';
+                        } else if (location === 'payment_pending') {
+                            statusSelect.value = 'payment-pending';
+                        } else if (serviceRecord.service_state === 'completed') {
+                            statusSelect.value = 'completed';
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error loading service record:', e);
+                }
+                
+                // Try to get the vehicle
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('vehicles')
+                        .select('*, customers(*)')
+                        .eq('id', vehicleId)
+                        .single();
+                        
+                    if (!error && data) {
+                        vehicle = data;
+                        customer = data.customers;
+                        console.log('Vehicle loaded:', vehicle);
+                        
+                        // Update vehicle details
+                        document.getElementById('vehicle-make-model').textContent = `${vehicle.make || ''} ${vehicle.model || ''}`;
+                        document.getElementById('vehicle-reg-number').textContent = vehicle.registration_number || '';
+                        document.getElementById('vehicle-extra-details').textContent = `Year: ${vehicle.year || 'N/A'}`;
+                        
+                        // Update customer details if available
+                        if (customer) {
+                            document.getElementById('customer-name-display').textContent = customer.name || 'Unknown';
+                            document.getElementById('customer-contact').textContent = customer.phone || 'No contact info';
+                        } else {
+                            document.getElementById('customer-name-display').textContent = 'Unknown customer';
+                            document.getElementById('customer-contact').textContent = '';
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error loading vehicle:', e);
+                    
+                    // Use service record details as fallback
+                    if (serviceRecord) {
+                        document.getElementById('vehicle-make-model').textContent = `${serviceRecord.vehicle_make || ''} ${serviceRecord.vehicle_model || ''}`;
+                        document.getElementById('vehicle-reg-number').textContent = serviceRecord.registration_number || '';
+                        document.getElementById('customer-name-display').textContent = serviceRecord.customer_name || 'Unknown';
+                        document.getElementById('customer-contact').textContent = '';
+                    } else {
+                        document.getElementById('vehicle-make-model').textContent = 'Vehicle details unavailable';
+                        document.getElementById('vehicle-reg-number').textContent = '';
+                        document.getElementById('customer-name-display').textContent = 'Customer details unavailable';
+                        document.getElementById('customer-contact').textContent = '';
+                    }
+                }
+                
+                // Render notes
+                const notesContainer = document.getElementById('notes-container');
+                notesContainer.innerHTML = '';
+                
+                if (notes.length > 0) {
+                    notes.forEach((note, index) => {
+                        const noteElement = document.createElement('div');
+                        noteElement.className = 'flex items-center gap-2';
+                        noteElement.innerHTML = `
+                            <div class="flex-1">Note ${index + 1} ${note.completed ? 
+                                '<span class="text-green-500">✓</span>' : 
+                                '<span class="text-red-500">✗</span>'}</div>
+                            <div class="text-sm">${note.text}</div>
+                        `;
+                        notesContainer.appendChild(noteElement);
+                    });
+                } else {
+                    notesContainer.innerHTML = '<div class="text-gray-500 text-center">No notes added</div>';
+                }
+                
+            } catch (error) {
+                console.error('Error in loadVehicleDetails:', error);
+            }
+        }
+
+        // Set up event listeners for the vehicle details modal
+        document.addEventListener('DOMContentLoaded', function() {
+            // Close button
+            const closeBtn = document.getElementById('close-vehicle-details');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function() {
+                    document.getElementById('vehicle-details-modal').classList.add('hidden');
+                });
+            }
+            
+            // Status change
+            const statusSelect = document.getElementById('vehicle-status-select');
+            if (statusSelect) {
+                statusSelect.addEventListener('change', function(e) {
+                    const newStatus = e.target.value;
+                    const recordId = this.dataset.recordId;
+                    
+                    if (recordId) {
+                        // Update the record status
+                        updateRecordStatus(recordId, newStatus)
+                            .then(() => {
+                                // Reload the kanban board after status change
+                                loadKanbanData();
+                            })
+                            .catch(err => {
+                                console.error('Failed to update status:', err);
+                            });
+                    }
+                });
+            }
+            
+            // Add Note button
+            const addNoteBtn = document.getElementById('add-note-button');
+            if (addNoteBtn) {
+                addNoteBtn.addEventListener('click', function() {
+                    // Show a prompt to add a note
+                    const noteText = prompt('Enter a new note:');
+                    if (noteText && noteText.trim()) {
+                        const notesContainer = document.getElementById('notes-container');
+                        const noteCount = notesContainer.children.length + 1;
+                        
+                        const noteElement = document.createElement('div');
+                        noteElement.className = 'flex items-center gap-2';
+                        noteElement.innerHTML = `
+                            <div class="flex-1">Note ${noteCount} <span class="text-green-500">✓</span></div>
+                            <div class="text-sm">${noteText}</div>
+                        `;
+                        
+                        // Clear "no notes" message if it exists
+                        if (notesContainer.querySelector('.text-gray-500')) {
+                            notesContainer.innerHTML = '';
+                        }
+                        
+                        notesContainer.appendChild(noteElement);
+                        
+                        // TODO: Save the note to the database
+                    }
+                });
+            }
+            
+            // Add Job Section button
+            const addJobSectionBtn = document.getElementById('add-job-section-button');
+            if (addJobSectionBtn) {
+                addJobSectionBtn.addEventListener('click', function() {
+                    // Show a prompt to add a job section title
+                    const jobTitle = prompt('Enter job title:');
+                    if (jobTitle && jobTitle.trim()) {
+                        const jobsContainer = document.getElementById('jobs-sections-container');
+                        
+                        const jobSection = document.createElement('div');
+                        jobSection.className = 'job-section p-3 bg-gray-800 rounded-lg';
+                        jobSection.innerHTML = `
+                            <h4 class="text-white font-medium mb-2">${jobTitle}</h4>
+                            <div class="text-sm text-gray-300 mb-2">Parts: ₹0 Labor: ₹0 Total: ₹0</div>
+                        `;
+                        
+                        jobsContainer.appendChild(jobSection);
+                        
+                        // Scroll to the new job section
+                        jobsContainer.scrollTop = jobsContainer.scrollHeight;
+                    }
+                });
+            }
+            
+            // Add Job button
+            const addJobBtn = document.querySelector('.add-job-section-btn');
+            if (addJobBtn) {
+                addJobBtn.addEventListener('click', function() {
+                    // Get the current active job section or default to the first one
+                    const jobSections = document.querySelectorAll('.job-section');
+                    if (jobSections.length === 0) return;
+                    
+                    const activeSection = jobSections[jobSections.length - 1]; // Use last section as default
+                    
+                    // Show a prompt to add job details
+                    const jobName = prompt('Enter job description:');
+                    if (!jobName || !jobName.trim()) return;
+                    
+                    const jobAmount = parseFloat(prompt('Enter job amount (₹):', '0')) || 0;
+                    
+                    // Create job item
+                    const jobItem = document.createElement('div');
+                    jobItem.className = 'job-item flex justify-between items-center mt-2 text-white text-sm';
+                    jobItem.dataset.amount = jobAmount;
+                    jobItem.dataset.type = 'job';
+                    jobItem.innerHTML = `
+                        <span>${jobName}</span>
+                        <span>₹${jobAmount.toFixed(2)}</span>
+                    `;
+                    
+                    // Add job to the section
+                    activeSection.appendChild(jobItem);
+                    
+                    // Update section totals
+                    updateSectionTotals(activeSection);
+                    
+                    // Update grand totals
+                    updateGrandTotals();
+                });
+            }
+            
+            // Add Part button
+            const addPartBtn = document.querySelector('.add-part-btn');
+            if (addPartBtn) {
+                addPartBtn.addEventListener('click', function() {
+                    // Get the current active job section or default to the first one
+                    const jobSections = document.querySelectorAll('.job-section');
+                    if (jobSections.length === 0) return;
+                    
+                    const activeSection = jobSections[jobSections.length - 1]; // Use last section as default
+                    
+                    // Show a prompt to add part details
+                    const partName = prompt('Enter part name:');
+                    if (!partName || !partName.trim()) return;
+                    
+                    const partAmount = parseFloat(prompt('Enter part cost (₹):', '0')) || 0;
+                    
+                    // Create part item
+                    const partItem = document.createElement('div');
+                    partItem.className = 'part-item flex justify-between items-center mt-2 text-teal-300 text-sm';
+                    partItem.dataset.amount = partAmount;
+                    partItem.dataset.type = 'part';
+                    partItem.innerHTML = `
+                        <span>${partName}</span>
+                        <span>₹${partAmount.toFixed(2)}</span>
+                    `;
+                    
+                    // Add part to the section
+                    activeSection.appendChild(partItem);
+                    
+                    // Update section totals
+                    updateSectionTotals(activeSection);
+                    
+                    // Update grand totals
+                    updateGrandTotals();
+                });
+            }
+            
+            // Add Labor button
+            const addLaborBtn = document.querySelector('.add-labor-btn');
+            if (addLaborBtn) {
+                addLaborBtn.addEventListener('click', function() {
+                    // Get the current active job section or default to the first one
+                    const jobSections = document.querySelectorAll('.job-section');
+                    if (jobSections.length === 0) return;
+                    
+                    const activeSection = jobSections[jobSections.length - 1]; // Use last section as default
+                    
+                    // Show a prompt to add labor details
+                    const laborDesc = prompt('Enter labor description:');
+                    if (!laborDesc || !laborDesc.trim()) return;
+                    
+                    const laborAmount = parseFloat(prompt('Enter labor cost (₹):', '0')) || 0;
+                    
+                    // Create labor item
+                    const laborItem = document.createElement('div');
+                    laborItem.className = 'labor-item flex justify-between items-center mt-2 text-yellow-300 text-sm';
+                    laborItem.dataset.amount = laborAmount;
+                    laborItem.dataset.type = 'labor';
+                    laborItem.innerHTML = `
+                        <span>${laborDesc}</span>
+                        <span>₹${laborAmount.toFixed(2)}</span>
+                    `;
+                    
+                    // Add labor to the section
+                    activeSection.appendChild(laborItem);
+                    
+                    // Update section totals
+                    updateSectionTotals(activeSection);
+                    
+                    // Update grand totals
+                    updateGrandTotals();
+                });
+            }
+            
+            // Functions to update totals
+            function updateSectionTotals(section) {
+                let partTotal = 0;
+                let laborTotal = 0;
+                
+                // Calculate part totals
+                section.querySelectorAll('[data-type="part"]').forEach(part => {
+                    partTotal += parseFloat(part.dataset.amount) || 0;
+                });
+                
+                // Calculate labor totals
+                section.querySelectorAll('[data-type="labor"]').forEach(labor => {
+                    laborTotal += parseFloat(labor.dataset.amount) || 0;
+                });
+                
+                // Calculate job totals (if any items marked specifically as jobs)
+                section.querySelectorAll('[data-type="job"]').forEach(job => {
+                    // For simplicity, we'll add job costs to labor
+                    laborTotal += parseFloat(job.dataset.amount) || 0;
+                });
+                
+                const sectionTotal = partTotal + laborTotal;
+                
+                // Update section total display
+                const totalsDisplay = section.querySelector('div.text-sm.text-gray-300');
+                if (totalsDisplay) {
+                    totalsDisplay.textContent = `Parts: ₹${partTotal.toFixed(2)} Labor: ₹${laborTotal.toFixed(2)} Total: ₹${sectionTotal.toFixed(2)}`;
+                }
+                
+                // Store totals in dataset for easier global calculation
+                section.dataset.partTotal = partTotal;
+                section.dataset.laborTotal = laborTotal;
+                section.dataset.sectionTotal = sectionTotal;
+            }
+            
+            function updateGrandTotals() {
+                let grandPartTotal = 0;
+                let grandLaborTotal = 0;
+                
+                // Sum up all section totals
+                document.querySelectorAll('.job-section').forEach(section => {
+                    grandPartTotal += parseFloat(section.dataset.partTotal) || 0;
+                    grandLaborTotal += parseFloat(section.dataset.laborTotal) || 0;
+                });
+                
+                const grandTotal = grandPartTotal + grandLaborTotal;
+                
+                // Update display
+                document.getElementById('total-parts').textContent = grandPartTotal.toFixed(2);
+                document.getElementById('total-labor').textContent = grandLaborTotal.toFixed(2);
+                document.getElementById('grand-total').textContent = grandTotal.toFixed(2);
+            }
+            
+            // Export buttons
+            document.getElementById('export-estimate-btn')?.addEventListener('click', function() {
+                alert('Export Estimate functionality will be implemented soon!');
+            });
+            
+            document.getElementById('export-receipt-btn')?.addEventListener('click', function() {
+                alert('Export Receipt functionality will be implemented soon!');
+            });
+        });
+
+        // Update the renderVehiclesToContainer function to add click handler for cards
+        function renderVehiclesToContainer(containerId, serviceRecords, statusLabel) {
+            // ... existing function code ...
+            
+            // Add click handlers to view cards
+            container.querySelectorAll('.task-card').forEach(card => {
+                card.addEventListener('click', function(e) {
+                    // Don't trigger if clicking on controls (dropdown, buttons)
+                    if (e.target.closest('.status-select') || e.target.closest('button')) {
+                        return;
+                    }
+                    
+                    const vehicleId = this.dataset.vehicleId;
+                    const recordId = this.dataset.recordId;
+                    
+                    // Open the vehicle details modal
+                    openVehicleDetailsModal(vehicleId, recordId);
+                });
+            });
+            
+            // ... rest of the existing function ...
+        }
+
+        // Add New Job Sheet Modal (Mockup Style)
+        <div id="new-job-sheet-modal" class="fixed inset-0 z-50 hidden">
+            <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+            <div class="absolute inset-0 flex items-center justify-center p-4">
+                <div class="bg-[#1e2636] rounded-lg shadow-xl w-full max-w-xl overflow-hidden flex flex-col">
+                    <!-- Modal Header -->
+                    <div class="flex justify-between items-center px-6 py-4 border-b border-gray-700">
+                        <h3 class="text-2xl font-semibold text-white">New Job Sheet</h3>
+                        <button id="close-new-job-sheet" class="text-white text-3xl">&times;</button>
+                    </div>
+                    
+                    <!-- Modal Body -->
+                    <div class="flex-1 p-6 space-y-6">
+                        <!-- Customer Section -->
+                        <div>
+                            <label class="block text-white text-xl mb-3">Customer</label>
+                            <input type="text" placeholder="Search customer by name, phone or email" 
+                                   class="w-full p-4 rounded-lg bg-[#282f45] text-white border-0 shadow-inner">
+                        </div>
+                        
+                        <!-- Vehicle Section -->
+                        <div>
+                            <label class="block text-white text-xl mb-3">Vehicle</label>
+                            <div class="relative">
+                                <select class="w-full p-4 rounded-lg bg-[#282f45] text-white border-0 shadow-inner appearance-none">
+                                    <option>Select a customer first</option>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Tabs -->
+                        <div>
+                            <div class="flex border-b border-blue-500">
+                                <button id="customer-notes-tab-btn" class="px-6 py-3 text-white text-xl border-b-2 border-blue-500 focus:outline-none">Customer Notes</button>
+                                <button id="order-details-tab-btn" class="px-6 py-3 text-gray-400 text-xl border-b-2 border-transparent focus:outline-none">Order Details</button>
+                            </div>
+                            
+                            <!-- Customer Notes Content -->
+                            <div id="customer-notes-content" class="py-6">
+                                <div class="flex gap-2 mb-6">
+                                    <input type="text" placeholder="Add a new note..." 
+                                           class="flex-1 p-4 rounded-lg bg-[#282f45] text-white border-0 shadow-inner">
+                                    <button class="bg-white text-[#1e2636] px-6 py-2 rounded-lg font-bold">Add</button>
+                                </div>
+                                
+                                <div class="text-center text-gray-400 py-8">
+                                    No notes added yet
+                                </div>
+                            </div>
+                            
+                            <!-- Order Details Content (hidden by default) -->
+                            <div id="order-details-content" class="py-6 hidden">
+                                <div class="space-y-4">
+                                    <!-- Order details will go here -->
+                                    <p class="text-white">Order details content will appear here</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Modal Footer -->
+                    <div class="px-6 py-4 border-t border-gray-700 flex justify-between">
+                        <div class="relative w-64">
+                            <select class="w-full p-3 rounded-lg bg-[#282f45] text-white border-0 shadow-inner appearance-none">
+                                <option>Schedule for</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </div>
+                        </div>
+                        <div class="flex space-x-4">
+                            <button class="px-6 py-3 bg-blue-600 text-white rounded-lg">Send Estimate</button>
+                            <button class="px-6 py-3 bg-green-600 text-white rounded-lg">Save Job</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+        // Add this just before the closing </script> tag
+
+        // Job Sheet Modal functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Setup job sheet modal open buttons 
+            const addVehicleBtns = document.querySelectorAll('.add-vehicle-btn');
+            const newJobSheetModal = document.getElementById('new-job-sheet-modal');
+            const closeNewJobSheetBtn = document.getElementById('close-new-job-sheet');
+            
+            if (addVehicleBtns && newJobSheetModal) {
+                addVehicleBtns.forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        newJobSheetModal.classList.remove('hidden');
+                    });
+                });
+            }
+            
+            if (closeNewJobSheetBtn && newJobSheetModal) {
+                closeNewJobSheetBtn.addEventListener('click', function() {
+                    newJobSheetModal.classList.add('hidden');
+                });
+            }
+            
+            // Handle tab switching
+            const customerNotesTabBtn = document.getElementById('customer-notes-tab-btn');
+            const orderDetailsTabBtn = document.getElementById('order-details-tab-btn');
+            const customerNotesContent = document.getElementById('customer-notes-content');
+            const orderDetailsContent = document.getElementById('order-details-content');
+            
+            if (customerNotesTabBtn && orderDetailsTabBtn) {
+                customerNotesTabBtn.addEventListener('click', function() {
+                    customerNotesTabBtn.classList.replace('text-gray-400', 'text-white');
+                    customerNotesTabBtn.classList.replace('border-transparent', 'border-blue-500');
+                    orderDetailsTabBtn.classList.replace('text-white', 'text-gray-400');
+                    orderDetailsTabBtn.classList.replace('border-blue-500', 'border-transparent');
+                    
+                    customerNotesContent.classList.remove('hidden');
+                    orderDetailsContent.classList.add('hidden');
+                });
+                
+                orderDetailsTabBtn.addEventListener('click', function() {
+                    orderDetailsTabBtn.classList.replace('text-gray-400', 'text-white');
+                    orderDetailsTabBtn.classList.replace('border-transparent', 'border-blue-500');
+                    customerNotesTabBtn.classList.replace('text-white', 'text-gray-400');
+                    customerNotesTabBtn.classList.replace('border-blue-500', 'border-transparent');
+                    
+                    orderDetailsContent.classList.remove('hidden');
+                    customerNotesContent.classList.add('hidden');
+                });
+            }
+        });
+        </script>
+    </script>
+</body>
+</html>

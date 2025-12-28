@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#000000">
+    <meta name="description" content="Car service management application">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Carigar">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/icon-152x152.png">
+    <title>Follow-up & Reminders - Carigar</title>
+    <link href="../assets/css/styles.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/look.css">
+
+    <!-- Dark mode CSS -->
+    <link rel="stylesheet" href="../assets/css/dark-mode.css">
+    
+    <!-- Temporarily bypass auth middleware for development -->
+    <!-- <script src="../assets/js/auth-middleware.js"></script> -->
+</head>
+<body class="flex min-h-screen flex-col">
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col">
+        <!-- Top Navbar (Desktop Only) -->
+        <div class="top-nav h-16 shadow-md flex items-center px-4 md:px-6 sticky top-0 z-10 relative justify-between md:justify-start hidden md:flex">
+            <div class="flex items-center gap-2">
+                <span class="text-2xl font-semibold gilroy text-black dark:text-white hidden dark:block">Carigar</span>
+            </div>
+            <div class="flex gap-6 items-center ml-10">
+                <a href="index.html" class="nav-icon-btn" title="Home">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7m-9 2v10a1 1 0 001 1h4a1 1 0 001-1V12m-4-2h4" />
+                    </svg>
+                </a>
+                <a href="order.html" class="nav-icon-btn" title="Order">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                </a>
+                <a href="inventory.html" class="nav-icon-btn" title="Inventory">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 13H5v6a2 2 0 002 2h10a2 2 0 002-2v-6m-7-2V3m0 0L9 7m3-4l3 4" />
+                    </svg>
+                </a>
+                <a href="carprofile.html" class="nav-icon-btn" title="Car Profile">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
+                </a>
+            </div>
+            <div class="ml-auto flex gap-2 items-center">
+                <button id="theme-toggle" class="p-2 rounded-lg bg-light-toggle dark:bg-dark-toggle text-light-text dark:text-dark-text hover:bg-light-toggle-hover dark:hover:bg-dark-toggle-hover">
+                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Layout -->
+        <div class="main-container flex-1 flex flex-col px-4 md:px-6 pb-6 gap-6">
+            <!-- Content Area -->
+            <div class="content-area w-full flex flex-col gap-6">
+                <!-- Page Header -->
+                <div class="flex justify-between items-center mt-4">
+                    <h1 class="text-2xl font-bold gilroy">Follow-up & Reminders</h1>
+                    <button id="create-reminder-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm flex items-center">
+                        <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Create Reminder
+                    </button>
+                </div>
+                
+                <!-- Reminder Tabs -->
+                <div class="mb-4 border-b border-gray-200">
+                    <ul class="flex flex-wrap -mb-px text-sm font-medium text-center">
+                        <li class="mr-2">
+                            <a href="#" class="reminder-tab active inline-block p-4 border-b-2 border-blue-600 rounded-t-lg" data-tab="upcoming">Upcoming</a>
+                        </li>
+                        <li class="mr-2">
+                            <a href="#" class="reminder-tab inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:border-gray-300" data-tab="vehicle">Vehicle Renewals</a>
+                        </li>
+                        <li class="mr-2">
+                            <a href="#" class="reminder-tab inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:border-gray-300" data-tab="service">Service Followups</a>
+                        </li>
+                        <li class="mr-2">
+                            <a href="#" class="reminder-tab inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:border-gray-300" data-tab="expired">Expired Items</a>
+                        </li>
+                        <li class="mr-2">
+                            <a href="#" class="reminder-tab inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:border-gray-300" data-tab="onboarding">Onboarding</a>
+                        </li>
+                        <li>
+                            <a href="#" class="reminder-tab inline-block p-4 border-b-2 border-transparent rounded-t-lg hover:border-gray-300" data-tab="completed">Completed</a>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- Reminder Content -->
+                <div class="reminder-content">
+                    <!-- Upcoming Tab -->
+                    <div class="reminder-tab-content" id="upcoming-tab">
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                            <!-- Calendar View -->
+                            <div class="lg:col-span-4 xl:col-span-3">
+                                <div class="calendar-container w-full max-w-none bg-white dark:bg-gray-800 rounded-lg shadow p-3">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <button class="calendar-nav-btn p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full" id="prevMonth">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                                            </svg>
+                                        </button>
+                                        <h3 class="text-base font-semibold" id="currentMonth">May 2025</h3>
+                                        <button class="calendar-nav-btn p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full" id="nextMonth">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div class="grid grid-cols-7 gap-0.5 text-sm"></div>
+                                </div>
+                            </div>
+
+                            <!-- Reminders Lists -->
+                            <div class="lg:col-span-7 xl:col-span-8 space-y-4">
+                                <!-- Bulk Actions -->
+                                <div class="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4 hidden" id="bulk-actions">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium" id="selected-count">0 selected</span>
+                                        <div class="flex gap-2">
+                                            <button class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1" id="bulk-whatsapp">
+                                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                                                    <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771z"/>
+                                                </svg>
+                                                Send WhatsApp
+                                            </button>
+                                            <button class="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300" id="clear-selection">
+                                                Clear Selection
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Verticals -->
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <!-- Insurance Reminders -->
+                                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+                                        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center cursor-pointer" onclick="toggleSection('insurance-list')">
+                                            <h3 class="font-semibold">Insurance Renewals</h3>
+                                            <svg class="w-5 h-5 transform transition-transform" id="insurance-arrow">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        </div>
+                                        <div class="reminders-list p-4" id="insurance-list" data-type="insurance_renewal">
+                                            <!-- Will be populated dynamically -->
+                                        </div>
+                                    </div>
+
+                                    <!-- PUC Reminders -->
+                                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+                                        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center cursor-pointer" onclick="toggleSection('puc-list')">
+                                            <h3 class="font-semibold">PUC Renewals</h3>
+                                            <svg class="w-5 h-5 transform transition-transform" id="puc-arrow">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        </div>
+                                        <div class="reminders-list p-4" id="puc-list" data-type="puc_renewal">
+                                            <!-- Will be populated dynamically -->
+                                        </div>
+                                    </div>
+
+                                    <!-- Service Reminders -->
+                                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+                                        <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center cursor-pointer" onclick="toggleSection('service-list')">
+                                            <h3 class="font-semibold">Service Followups</h3>
+                                            <svg class="w-5 h-5 transform transition-transform" id="service-arrow">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        </div>
+                                        <div class="reminders-list p-4" id="service-list" data-type="service_followup">
+                                            <!-- Will be populated dynamically -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Vehicle Renewals Tab -->
+                    <div class="reminder-tab-content hidden" id="vehicle-tab">
+                        <div class="reminders-list space-y-3">
+                            <!-- Vehicle renewal reminders will be dynamically populated here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Service Followups Tab -->
+                    <div class="reminder-tab-content hidden" id="service-tab">
+                        <div class="reminders-list space-y-3">
+                            <!-- Service followup reminders will be dynamically populated here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Expired Items Tab -->
+                    <div class="reminder-tab-content hidden" id="expired-tab">
+                        <div class="space-y-4">
+                            <!-- Expired Insurance -->
+                            <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+                                <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                                    <h3 class="font-semibold text-red-600 dark:text-red-400">Expired Insurance</h3>
+                                    <span class="px-2 py-1 text-xs bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full" id="expired-insurance-count">0</span>
+                                </div>
+                                <div class="reminders-list p-4" id="expired-insurance-list">
+                                    <!-- Will be populated dynamically -->
+                                </div>
+                            </div>
+                            
+                            <!-- Expired PUC -->
+                            <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+                                <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                                    <h3 class="font-semibold text-red-600 dark:text-red-400">Expired PUC</h3>
+                                    <span class="px-2 py-1 text-xs bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full" id="expired-puc-count">0</span>
+                                </div>
+                                <div class="reminders-list p-4" id="expired-puc-list">
+                                    <!-- Will be populated dynamically -->
+                                </div>
+                            </div>
+                            
+                            <!-- Overdue Service -->
+                            <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
+                                <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                                    <h3 class="font-semibold text-red-600 dark:text-red-400">Overdue Service</h3>
+                                    <span class="px-2 py-1 text-xs bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-full" id="overdue-service-count">0</span>
+                                </div>
+                                <div class="reminders-list p-4" id="overdue-service-list">
+                                    <!-- Will be populated dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Onboarding Tab -->
+                    <div class="reminder-tab-content hidden" id="onboarding-tab">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            <!-- Incomplete Data Section -->
+                            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                                <h3 class="text-lg font-semibold mb-4 flex items-center">
+                                    <svg class="w-5 h-5 mr-2 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                    </svg>
+                                    Incomplete Data
+                                </h3>
+                                <div class="space-y-4" id="incomplete-data-list">
+                                    <!-- Will be populated dynamically -->
+                                </div>
+                            </div>
+
+                            <!-- Complete Data Section -->
+                            <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                                <h3 class="text-lg font-semibold mb-4 flex items-center">
+                                    <svg class="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    Complete Data
+                                </h3>
+                                <div class="space-y-4" id="complete-data-list">
+                                    <!-- Will be populated dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Completed Tab -->
+                    <div class="reminder-tab-content hidden" id="completed-tab">
+                        <div class="reminders-list space-y-3">
+                            <!-- Completed reminders will be dynamically populated here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Reminder Modal -->
+    <div id="create-reminder-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white dark:bg-dark-panel rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden">
+            <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 class="text-lg font-semibold">Create Reminder</h3>
+            </div>
+            <form id="create-reminder-form" class="p-4 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1" for="reminder-title">Title</label>
+                    <input type="text" id="reminder-title" name="title" required
+                           class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium mb-1" for="reminder-description">Description</label>
+                    <textarea id="reminder-description" name="description" rows="3"
+                            class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700"></textarea>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium mb-1" for="reminder-type">Type</label>
+                    <select id="reminder-type" name="type" required
+                            class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700">
+                        <option value="insurance_renewal">Insurance Renewal</option>
+                        <option value="service_followup">Service Followup</option>
+                        <option value="puc_renewal">PUC Renewal</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium mb-1" for="reminder-vehicle">Vehicle</label>
+                    <select id="reminder-vehicle" name="vehicle_id" required
+                            class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700">
+                        <!-- Options will be populated dynamically -->
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">Additional Contacts to Notify</label>
+                    <div id="additional-contacts" class="space-y-2">
+                        <div class="flex gap-2">
+                            <input type="text" name="contact_name[]" placeholder="Name"
+                                   class="flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700">
+                            <input type="tel" name="contact_phone[]" placeholder="Phone"
+                                   class="flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700">
+                            <button type="button" class="remove-contact text-red-500 hover:text-red-700 px-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="button" id="add-contact" 
+                            class="mt-2 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
+                        + Add another contact
+                    </button>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium mb-1" for="reminder-due-date">Due Date</label>
+                    <input type="date" id="reminder-due-date" name="due_date" required
+                           class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700">
+                </div>
+                
+                <div class="flex justify-end space-x-2 pt-4">
+                    <button type="button" id="cancel-reminder-btn"
+                            class="px-4 py-2 text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        Create Reminder
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation (Mobile Only) -->
+    <div class="bottom-nav fixed bottom-0 left-0 right-0 h-16 bg-white dark:bg-dark-panel shadow-md flex items-center justify-around md:hidden z-20">
+        <div class="flex justify-around items-center w-full max-w-md mx-auto py-2">
+            <a href="index.html" class="bottom-nav-icon-btn" title="Home">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7m-9 2v10a1 1 0 001 1h4a1 1 0 001-1V12m-4-2h4" />
+                </svg>
+            </a>
+            <a href="order.html" class="bottom-nav-icon-btn" title="Order">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+            </a>
+            <a href="inventory.html" class="bottom-nav-icon-btn" title="Inventory">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 13H5v6a2 2 0 002 2h10a2 2 0 002-2v-6m-7-2V3m0 0L9 7m3-4l3 4" />
+                </svg>
+            </a>
+            <a href="carprofile.html" class="bottom-nav-icon-btn" title="Car Profile">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+            </a>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script>
+        // Initialize Supabase client immediately after CDN loads
+        const SUPABASE_URL = 'https://mtclazwwcsjwuqydxtzj.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10Y2xhend3Y3Nqd3VxeWR4dHpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk3NTIzNzUsImV4cCI6MjA2NTMyODM3NX0.q-I1f6rr9E7XiloHLWZ3mBC963Sk5Zjt3lKneFLTqHA';
+        
+        // Create Supabase client
+        window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('Supabase client initialized:', window.supabase);
+    </script>
+    <script src="../assets/js/dark-mode-init.js"></script>
+    <script src="../assets/js/calendar.js"></script>
+    <script src="../assets/js/reminders.js"></script>
+
+    <script>
+        // Simple notification function
+        function showNotification(message, type = 'info') {
+            const colors = {
+                success: 'bg-green-500',
+                error: 'bg-red-500',
+                info: 'bg-blue-500'
+            };
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-4 py-2 rounded-lg text-white ${colors[type] || colors.info} shadow-lg z-50 transition-opacity duration-300`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+        
+        // Make showNotification available globally
+        window.showNotification = showNotification;
+
+        // Theme toggle
+        document.getElementById('theme-toggle')?.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+        });
+        
+        // Set initial theme - apply dark mode by default and let users toggle if needed
+        const savedTheme = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+            document.documentElement.classList.add('dark');
+        } else if (savedTheme === 'light') {
+            document.documentElement.classList.remove('dark');
+        } else {
+            // Default to dark mode if no preference
+            document.documentElement.classList.add('dark');
+        }
+
+        // Initialize components when DOM is loaded
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('DOM loaded, starting initialization...');
+            
+            try {
+                // Verify Supabase client is available
+                if (!window.supabase || typeof window.supabase.from !== 'function') {
+                    throw new Error('Supabase client not properly initialized');
+                }
+
+                console.log('Supabase client found, testing connection...');
+
+                // Test Supabase connection with a simple query
+                try {
+                    const { data, error } = await window.supabase
+                        .from('customers')
+                        .select('count', { count: 'exact' })
+                        .limit(1);
+                    
+                    if (error) {
+                        console.error('Database test query failed:', error);
+                        throw error;
+                    }
+                    console.log('Database connection successful');
+                } catch (error) {
+                    console.error('Supabase connection test failed:', error);
+                    showNotification('Database connection failed. Some features may not work properly.', 'warning');
+                    // Continue anyway for development
+                }
+                
+            } catch (initError) {
+                console.error('Failed to initialize Supabase:', initError);
+                showNotification('Failed to initialize database connection', 'error');
+                return;
+            }
+            
+            try {
+                console.log('Initializing reminder manager...');
+                
+                // Check if ReminderManager class exists
+                if (typeof ReminderManager === 'undefined') {
+                    throw new Error('ReminderManager class not found');
+                }
+                
+                // Verify Supabase client before passing to ReminderManager
+                console.log('Verifying Supabase client...');
+                console.log('window.supabase:', window.supabase);
+                console.log('Type:', typeof window.supabase);
+                console.log('Has from method:', typeof window.supabase?.from);
+                
+                if (window.supabase && typeof window.supabase.from === 'function') {
+                    console.log('Supabase client verification passed');
+                } else {
+                    throw new Error('Supabase client verification failed');
+                }
+                
+                // Initialize reminder manager with Supabase client
+                const reminderManager = new ReminderManager(window.supabase);
+                
+                console.log('Reminder manager created, loading initial data...');
+                
+                // Initialize calendar if available
+                let calendar = null;
+                try {
+                    if (typeof Calendar !== 'undefined') {
+                        calendar = new Calendar();
+                        console.log('Calendar initialized');
+                    }
+                } catch (calendarError) {
+                    console.warn('Calendar initialization failed:', calendarError);
+                    // Continue without calendar
+                }
+                
+                // Load initial data
+                const reminders = await reminderManager.loadReminders('upcoming');
+                console.log('Initial reminders loaded:', reminders?.length || 0, 'reminders');
+                
+                // Also load data for other tabs to test
+                console.log('Loading vehicle renewals tab...');
+                await reminderManager.loadReminders('vehicle');
+                
+                console.log('Loading service followups tab...');
+                await reminderManager.loadReminders('service');
+                
+                console.log('Loading expired items tab...');
+                await reminderManager.loadReminders('expired');
+                
+                // If no reminders found, let's debug the database structure
+                if (!reminders || reminders.length === 0) {
+                    console.log('No reminders found, checking database structure...');
+                    try {
+                        // Check if reminders table exists and has data
+                        const { data: reminderCount, error: countError } = await window.supabase
+                            .from('reminders')
+                            .select('*', { count: 'exact' })
+                            .limit(1);
+                        
+                        console.log('Reminders table count result:', { reminderCount, countError });
+                        
+                        // Check vehicles table structure
+                        const { data: vehicles, error: vehicleError } = await window.supabase
+                            .from('vehicles')
+                            .select('*')
+                            .limit(3);
+                        
+                        console.log('Vehicles table sample:', { vehicles, vehicleError });
+                        
+                        // Create a test reminder if none exist
+                        if (vehicles && vehicles.length > 0) {
+                            console.log('Creating test reminder...');
+                            const testReminder = {
+                                title: 'Test Insurance Renewal',
+                                description: 'Test reminder for development',
+                                type: 'insurance_renewal',
+                                vehicle_id: vehicles[0].vehicle_id || vehicles[0].id,
+                                due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days from now
+                                status: 'pending'
+                            };
+                            
+                            const { data: newReminder, error: createError } = await window.supabase
+                                .from('reminders')
+                                .insert([testReminder])
+                                .select();
+                                
+                            console.log('Test reminder creation result:', { newReminder, createError });
+                            
+                            if (!createError) {
+                                // Reload reminders after creating test data
+                                setTimeout(() => {
+                                    reminderManager.loadReminders('upcoming');
+                                }, 1000);
+                            }
+                        }
+                    } catch (debugError) {
+                        console.error('Debug query failed:', debugError);
+                    }
+                }
+                
+                // Update calendar if available
+                if (calendar && reminders) {
+                    try {
+                        calendar.updateReminders(reminders);
+                    } catch (updateError) {
+                        console.warn('Calendar update failed:', updateError);
+                    }
+                }
+                
+                // Expose instances to window for debugging
+                window.reminderManager = reminderManager;
+                if (calendar) window.calendar = calendar;
+                
+                console.log('Initialization complete');
+                showNotification('Reminders page loaded successfully', 'success');
+                
+            } catch (error) {
+                console.error('Error during initialization:', error);
+                showNotification('Failed to initialize reminders page: ' + error.message, 'error');
+            }
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#000000">
+    <meta name="description" content="Car service management application">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Carigar">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/icon-152x152.png">
+    <title>Carigar</title>
+    <script>
+        // Initialize dark mode before any rendering
+        if (localStorage.getItem('theme') === 'light') {
+            document.documentElement.classList.remove('dark');
+        } else {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
+    <!-- Load Supabase library first -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Load other libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    
+    <!-- Initialize jsPDF -->
+    <script>
+        // Ensure jsPDF is available globally
+        if (typeof window.jspdf !== 'undefined' && window.jspdf.jsPDF) {
+            window.jsPDF = window.jspdf.jsPDF;
+            console.log('✅ jsPDF initialized from UMD module');
+        } else if (typeof window.jsPDF !== 'undefined') {
+            console.log('✅ jsPDF already available globally');
+        } else {
+            console.error('❌ jsPDF not found after loading');
+        }
+    </script>
+    
+    <!-- Load local CSS and JS -->
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/look.css">
+    <link rel="stylesheet" href="../assets/css/dark-mode.css">
+    <link rel="stylesheet" href="../assets/css/tailwind.css">
+    
+    <!-- Load JavaScript files -->
+    <script src="../assets/js/dark-mode-init.js"></script>
+    <script src="../assets/js/supabase.js"></script>
+    <script src="../assets/js/auth-middleware.js"></script>
+    
+    <script>
+        // Service worker registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful');
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+    </script>
+</head>
+<body class="flex min-h-screen flex-col bg-gray-900 dark:bg-gray-900 text-white dark:text-white">
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col">
+        <!-- Top Navbar -->
+        <div class="top-nav h-16 shadow-md flex items-center px-4 md:px-6 sticky top-0 z-10 relative justify-between md:justify-start hidden md:flex">
+            <div class="flex items-center gap-2">
+                <span class="text-2xl font-semibold gilroy text-black dark:text-white hidden dark:block">Carigar</span>
+            </div>
+            <div class="flex gap-6 items-center ml-10">
+                <a href="index.html" class="nav-icon-btn" title="Home">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7m-9 2v10a1 1 0 001 1h4a1 1 0 001-1V12m-4-2h4" />
+                    </svg>
+                </a>
+                <a href="order.html" class="nav-icon-btn" title="Order">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                </a>
+                <a href="inventory.html" class="nav-icon-btn active" title="Inventory">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 13H5v6a2 2 0 002 2h10a2 2 0 002-2v-6m-7-2V3m0 0L9 7m3-4l3 4" />
+                    </svg>
+                </a>
+                <a href="carprofile.html" class="nav-icon-btn" title="Car Profile">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
+                </a>
+            </div>
+            <div class="ml-auto flex gap-2 items-center">
+                <button id="theme-toggle" class="p-2 rounded-lg bg-light-toggle dark:bg-dark-toggle text-light-text dark:text-dark-text hover:bg-light-toggle-hover dark:hover:bg-dark-toggle-hover">
+                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                </button>
+            </div>
+            <!-- Dropdown Menu (Mobile Only) -->
+            <div id="hamburger-menu" class="hidden md:hidden absolute top-16 left-0 w-full bg-white dark:bg-dark-panel shadow-lg z-20">
+                <div class="flex flex-col items-start p-4 gap-4">
+                    <a href="index.html" class="text-light-text dark:text-dark-text gilroy font-medium text-base hover:text-blue-500">Home</a>
+                    <a href="order.html" class="text-light-text dark:text-dark-text gilroy font-medium text-base hover:text-blue-500">Order</a>
+                    <a href="inventory.html" class="text-light-text dark:text-dark-text gilroy font-medium text-base hover:text-blue-500">Inventory</a>
+                    <a href="carprofile.html" class="text-light-text dark:text-dark-text gilroy font-medium text-base hover:text-blue-500">Car Profile</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Layout -->
+        <div class="main-container flex-1 flex flex-col md:flex-row px-4 md:px-6 pb-6 gap-6">
+        
+
+            <!-- Inventory Management Content -->
+            <div class="inventory-management w-full md:w-2/3 p-4 md:p-6 rounded-lg shadow-md border text-light-text dark:text-dark-text">
+                <h2 class="text-xl font-bold mb-4 gilroy">Inventory Report Maker</h2>
+                <form id="inventoryForm" class="space-y-6 bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="relative">
+                            <label for="name" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-200">Customer Name</label>
+                            <input type="text" id="name" name="name" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white" required placeholder="Start typing customer name...">
+                            <div id="customer-suggestions" class="absolute z-50 w-full border border-gray-300 dark:border-gray-600 rounded-lg mt-1 max-h-40 overflow-y-auto bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-lg hidden" style="position: absolute; z-index: 9999; background: white; border: 2px solid #3b82f6; box-shadow: 0 10px 25px rgba(0,0,0,0.2);"></div>
+                        </div>
+                        <div>
+                            <label for="regNo" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-200">Registration Number</label>
+                            <input type="text" id="regNo" name="regNo" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white" placeholder="Reg No">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="odo" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-200">Odometer Reading</label>
+                            <input type="text" id="odo" name="odo" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white" required>
+                        </div>
+                        <div>
+                            <label for="primaryJob" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-200">Primary Job</label>
+                            <input type="text" id="primaryJob" name="primaryJob" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white" required>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="customerNote" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-200">Customer Note</label>
+                        <textarea id="customerNote" name="customerNote" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white h-32"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label for="photos" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-200">Upload Car Photos</label>
+                        <input type="file" id="photos" name="photos" accept="image/*" multiple class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white">
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="workshop" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-200">Workshop</label>
+                            <input type="text" id="workshop" name="workshop" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white">
+                        </div>
+                        <div>
+                            <label for="fuelRange" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-200">Fuel Range</label>
+                            <input type="text" id="fuelRange" name="fuelRange" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white">
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label for="nextService" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-200">Next Service</label>
+                            <input type="text" id="nextService" name="nextService" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white">
+                        </div>
+                        <div>
+                            <label for="insurance" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-200">Insurance</label>
+                            <input type="text" id="insurance" name="insurance" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white">
+                        </div>
+                        <div>
+                            <label for="puc" class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-200">PUC</label>
+                            <input type="text" id="puc" name="puc" class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white">
+                        </div>
+                    </div>
+                    
+                                    <div class="flex items-center gap-4 flex-wrap justify-start mt-8">
+                    <button type="button" id="generateInventoryPdf" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors">Generate Inventory PDF</button>
+                    <button type="reset" class="px-6 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-medium rounded-lg transition-colors">Reset Form</button>
+
+                </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation (Mobile Only) -->
+    <div class="bottom-nav fixed bottom-0 left-0 right-0 h-16 bg-white dark:bg-dark-panel shadow-md flex items-center justify-around md:hidden z-20">
+        <div class="flex justify-around items-center w-full max-w-md mx-auto py-2">
+            <a href="index.html" class="bottom-nav-icon-btn" title="Home">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7m-9 2v10a1 1 0 001 1h4a1 1 0 001-1V12m-4-2h4" />
+                </svg>
+            </a>
+            <a href="order.html" class="bottom-nav-icon-btn" title="Order">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+            </a>
+            <a href="inventory.html" class="bottom-nav-icon-btn active" title="Inventory">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 13H5v6a2 2 0 002 2h10a2 2 0 002-2v-6m-7-2V3m0 0L9 7m3-4l3 4" />
+                </svg>
+            </a>
+            <a href="carprofile.html" class="bottom-nav-icon-btn" title="Car Profile">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+            </a>
+        </div>
+    </div>
+
+    <script src="../assets/js/supabase.js"></script>
+    <script src="../assets/js/inventory.js"></script>
+    <script>
+        // Hamburger menu toggle
+        document.getElementById('hamburger-toggle')?.addEventListener('click', () => {
+            const menu = document.getElementById('hamburger-menu');
+            menu.classList.toggle('hidden');
+        });
+        
+        // Theme toggle
+        document.getElementById('theme-toggle')?.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+        });
+        
+        // Set initial theme
+        if (localStorage.getItem('theme') === 'dark' || 
+            (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
+
+    <style>
+        /* Update existing styles */
+        .main-container {
+            padding-bottom: 5rem; /* Add padding for bottom navbar on mobile */
+        }
+
+        .nav-btn {
+            @apply flex flex-col items-center justify-center gap-1 p-2 rounded-lg transition-colors duration-200;
+        }
+
+        .nav-btn.active {
+            @apply bg-light-toggle dark:bg-dark-toggle text-light-text dark:text-dark-text;
+        }
+
+        .nav-icon {
+            @apply w-6 h-6;
+        }
+
+        .nav-text {
+            @apply text-xs;
+        }
+
+        /* Customer suggestions styling */
+        .customer-suggestion {
+            transition: all 0.2s ease-in-out;
+        }
+
+        .customer-suggestion:hover {
+            background-color: #f3f4f6;
+        }
+
+        .dark .customer-suggestion:hover {
+            background-color: #4b5563;
+        }
+
+        /* Mobile specific styles */
+        @media (max-width: 768px) {
+            .main-container {
+                padding-bottom: 6rem; /* Extra padding for bottom navbar */
+            }
+            
+            .top-nav {
+                display: none; /* Hide top navbar on mobile */
+            }
+            
+            .bottom-nav {
+                display: flex; /* Show bottom navbar on mobile */
+            }
+        }
+
+        /* Desktop specific styles */
+        @media (min-width: 769px) {
+            .top-nav {
+                display: flex; /* Show top navbar on desktop */
+            }
+            
+            .bottom-nav {
+                display: none; /* Hide bottom navbar on desktop */
+            }
+        }
+    </style>
+  </body>
+  </html>
+  

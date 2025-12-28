@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#000000">
+    <meta name="description" content="Car service management application">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Carigar">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta name="cache-buster" content="v2.0">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/icon-152x152.png">
+    <title>Carigar - Admin Dashboard</title>
+    <!-- Initialize theme before any rendering to prevent flashing -->
+    <script>
+        // Set initial theme immediately to prevent flash of wrong theme
+        if (localStorage.getItem('theme') === 'dark' || 
+            (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+    <link href="../assets/css/styles.css" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/look.css">
+    <link rel="stylesheet" href="../assets/css/dark-mode.css">
+    <script src="../assets/js/dark-mode-init.js"></script>
+    <script src="../assets/js/supabase-db.js"></script>
+    <style>
+        .kanban-board {
+            display: flex;
+            overflow-x: auto;
+            gap: 1rem;
+            padding: 1rem;
+            background-color: rgb(17 24 39) !important;
+        }
+
+        .kanban-column {
+            flex: 0 0 300px;
+        }
+
+        /* Dark mode specific styles */
+        .dark body {
+            background-color: rgb(17 24 39);
+            color: rgb(255 255 255);
+        }
+
+        .dark .text-muted {
+            color: rgb(156 163 175);
+        }
+
+        .dark .stat-card {
+            background-color: rgba(31, 41, 55, 0.5);
+            border: 1px solid rgb(55 65 81);
+        }
+
+        .dark .quick-actions,
+        .dark .summary-stats,
+        .dark .reminders {
+            background-color: rgb(31 41 55);
+            border-color: rgb(55 65 81);
+        }
+
+        .dark .home-btn,
+        .dark .inventory-btn,
+        .dark .add-job-btn,
+        .dark .add-part-btn {
+            background-color: rgba(31, 41, 55, 0.5);
+            color: rgb(255 255 255);
+        }
+
+        .dark .home-btn:hover,
+        .dark .inventory-btn:hover,
+        .dark .add-job-btn:hover,
+        .dark .add-part-btn:hover {
+            background-color: rgba(55, 65, 81, 0.7);
+        }
+
+        /* Navigation styles */
+        .nav-icon-btn,
+        .bottom-nav-icon-btn {
+            color: rgb(75 85 99);
+            transition: color 0.2s ease;
+        }
+
+        .dark .nav-icon-btn,
+        .dark .bottom-nav-icon-btn {
+            color: rgb(156 163 175);
+        }
+
+        .nav-icon-btn:hover,
+        .bottom-nav-icon-btn:hover,
+        .nav-icon-btn.active,
+        .bottom-nav-icon-btn.active {
+            color: rgb(37 99 235);
+        }
+
+        .dark .nav-icon-btn:hover,
+        .dark .bottom-nav-icon-btn:hover,
+        .dark .nav-icon-btn.active,
+        .dark .bottom-nav-icon-btn.active {
+            color: rgb(255 255 255);
+        }
+
+        /* Bottom navigation bar */
+        .bottom-nav {
+            background-color: rgb(255 255 255);
+            border-top: 1px solid rgb(229 231 235);
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+
+        .dark .bottom-nav {
+            background-color: rgb(31 41 55);
+            border-color: rgb(55 65 81);
+        }
+
+        /* Theme toggle button */
+        .theme-toggle {
+            background-color: rgb(243 244 246);
+            color: rgb(75 85 99);
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .dark .theme-toggle {
+            background-color: rgb(55 65 81);
+            color: rgb(156 163 175);
+        }
+
+        .theme-toggle:hover {
+            background-color: rgb(229 231 235);
+        }
+
+        .dark .theme-toggle:hover {
+            background-color: rgb(75 85 99);
+            color: rgb(255 255 255);
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                padding-bottom: 6rem;
+            }
+            
+            .top-nav {
+                display: none;
+            }
+            
+            .bottom-nav {
+                display: flex;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .top-nav {
+                display: flex;
+            }
+            
+            .bottom-nav {
+                display: none;
+            }
+        }
+    </style>
+
+    <script src="../assets/js/supabase.js"></script>
+    <script src="../assets/js/auth-middleware.js"></script>
+</head>
+<body class="flex min-h-screen flex-col bg-white dark:bg-gray-900 transition-colors duration-200" data-location="admin">
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col">
+        <!-- Top Navbar (Desktop Only) -->
+        <div class="top-nav h-16 shadow-md flex items-center px-4 md:px-6 sticky top-0 z-10 relative justify-between md:justify-start hidden md:flex">
+            <div class="flex items-center gap-2">
+                <span class="text-2xl font-semibold gilroy text-black dark:text-white hidden dark:block">Carigar</span>
+            </div>
+            <div class="flex gap-6 items-center ml-10">
+                <a href="index.html" class="nav-icon-btn active" title="Admin Dashboard">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7m-9 2v10a1 1 0 001 1h4a1 1 0 001-1V12m-4-2h4" />
+                    </svg>
+                </a>
+                <a href="nashik.html" class="nav-icon-btn" title="Nashik Kanban">
+                    <span class="text-sm font-medium">Nashik</span>
+                </a>
+                <a href="kalyan.html" class="nav-icon-btn" title="Kalyan Kanban">
+                    <span class="text-sm font-medium">Kalyan</span>
+                </a>
+                <a href="go-green.html" class="nav-icon-btn" title="Go Green Kanban">
+                    <span class="text-sm font-medium">Go Green</span>
+                </a>
+                <a href="order.html" class="nav-icon-btn" title="Order">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                </a>
+                <a href="inventory.html" class="nav-icon-btn" title="Inventory">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 13H5v6a2 2 0 002 2h10a2 2 0 002-2v-6m-7-2V3m0 0L9 7m3-4l3 4" />
+                    </svg>
+                </a>
+                <a href="carprofile.html" class="nav-icon-btn" title="Car Profile">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
+                </a>
+                <a href="financial-dashboard.html" class="nav-icon-btn" title="Financial Dashboard">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                </a>
+                <a href="insurance.html" class="nav-icon-btn" title="Insurance">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                </a>
+                <a href="ai-admin-panel.html" class="nav-icon-btn" title="AI Admin Panel">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                </a>
+            </div>
+            <div class="ml-auto flex gap-2 items-center">
+                <button id="theme-toggle" class="p-2 rounded-lg bg-light-toggle dark:bg-dark-toggle text-light-text dark:text-dark-text hover:bg-light-toggle-hover dark:hover:bg-dark-toggle-hover">
+                    <!-- Sun icon -->
+                    <svg class="w-5 h-5 hidden dark:block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <!-- Moon icon -->
+                    <svg class="w-5 h-5 block dark:hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Layout -->
+        <div class="main-container flex-1 flex flex-col px-4 md:px-6 pb-6 gap-6">
+            <!-- Content Area -->
+            <div class="content-area w-full flex flex-col gap-6">
+                <!-- Quick Actions Section -->
+                <div class="quick-actions p-4 md:p-6 rounded-lg shadow-md border text-light-text dark:text-dark-text">
+                    <h2 class="text-xl font-bold mb-4 gilroy">Quick Actions</h2>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                        <button onclick="window.location.href='new-customer.html'" class="flex flex-col items-center p-4 rounded-lg home-btn hover:bg-blue-300 transition-colors">
+                            <svg class="w-6 h-6 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                            </svg>
+                            <span class="text-sm gilroy font-medium">New Customer</span>
+                        </button>
+                        <button onclick="window.location.href='settlements.html'" class="flex flex-col items-center p-4 rounded-lg inventory-btn hover:bg-pink-300 transition-colors">
+                            <svg class="w-6 h-6 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                            <span class="text-sm gilroy font-medium">Settlements</span>
+                        </button>
+                        <button onclick="window.location.href='followup-reminders.html'" class="flex flex-col items-center p-4 rounded-lg add-job-btn hover:bg-purple-300 transition-colors">
+                            <svg class="w-6 h-6 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span class="text-sm gilroy font-medium">Follow up & Reminders</span>
+                        </button>
+                        <button onclick="window.location.href='dealership-directory.html'" class="flex flex-col items-center p-4 rounded-lg add-part-btn hover:bg-teal-300 transition-colors">
+                            <svg class="w-6 h-6 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                            <span class="text-sm gilroy font-medium">Dealership Directory</span>
+                        </button>
+                        <button onclick="window.location.href='garage-profile-enhanced.html'" class="flex flex-col items-center p-4 rounded-lg add-part-btn hover:bg-orange-300 transition-colors">
+                            <svg class="w-6 h-6 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                            <span class="text-sm gilroy font-medium">Enhanced Garage Profile</span>
+                        </button>
+                        <button onclick="window.location.href='insurance.html'" class="flex flex-col items-center p-4 rounded-lg add-part-btn hover:bg-indigo-300 transition-colors">
+                            <svg class="w-6 h-6 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
+                            <span class="text-sm gilroy font-medium">Insurance</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Kanban Board Columns -->
+                <div class="kanban-board p-4 md:p-6 rounded-lg shadow-md border text-light-text dark:text-dark-text overflow-x-auto bg-gray-900">
+                    <div class="flex gap-4">
+                    <!-- Upcoming Column -->
+                        <div class="kanban-column min-w-[300px]">
+                        <div class="kanban-section p-4 rounded-lg border border-gray-700 bg-gray-800/50 flex-1 flex flex-col">
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="text-md font-semibold gilroy text-white flex items-center">
+                                    Upcoming <span id="upcoming-count" class="ml-2 text-xs font-normal text-gray-400">0</span>
+                                </h4>
+                                <button class="add-vehicle-btn w-8 h-8 flex items-center justify-center bg-purple-500 hover:bg-purple-600 text-white rounded-full text-xl">+</button>
+                            </div>
+                            <div id="upcoming-vehicles" class="min-h-[60px] flex-1 flex flex-col gap-3 vehicle-drop-zone" data-column="upcoming">
+                                <!-- Overdue Section -->
+                                <div class="date-section" data-section="overdue">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                                            <h5 class="text-sm font-medium text-red-400">Overdue</h5>
+                                            <span id="overdue-count" class="text-xs text-gray-400">(0)</span>
+                                        </div>
+                                        <button class="toggle-section-btn text-xs px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded transition-colors" 
+                                                data-section="overdue" title="Toggle Overdue Section">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div id="overdue-vehicles" class="space-y-2 min-h-[40px]">
+                                        <div class="p-2 bg-gray-700 rounded text-center text-gray-500 text-xs">No overdue vehicles</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Today Section -->
+                                <div class="date-section" data-section="today">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-3 h-3 bg-orange-500 rounded-full"></div>
+                                            <h5 class="text-sm font-medium text-orange-400">Today</h5>
+                                            <span id="today-count" class="text-xs text-gray-400">(0)</span>
+                                        </div>
+                                        <button class="toggle-section-btn text-xs px-2 py-1 bg-orange-600 hover:bg-orange-700 text-white rounded transition-colors" 
+                                                data-section="today" title="Toggle Today Section">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div id="today-vehicles" class="space-y-2 min-h-[40px]">
+                                        <div class="p-2 bg-gray-700 rounded text-center text-gray-500 text-xs">No vehicles today</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Tomorrow Section -->
+                                <div class="date-section" data-section="tomorrow">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                                            <h5 class="text-sm font-medium text-yellow-400">Tomorrow</h5>
+                                            <span id="tomorrow-count" class="text-xs text-gray-400">(0)</span>
+                                        </div>
+                                        <button class="toggle-section-btn text-xs px-2 py-1 bg-yellow-600 hover:bg-yellow-700 text-white rounded transition-colors" 
+                                                data-section="tomorrow" title="Toggle Tomorrow Section">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div id="tomorrow-vehicles" class="space-y-2 min-h-[40px]">
+                                        <div class="p-2 bg-gray-700 rounded text-center text-gray-500 text-xs">No vehicles tomorrow</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 7+ Days Section -->
+                                <div class="date-section" data-section="future">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+                                            <h5 class="text-sm font-medium text-blue-400">7+ Days</h5>
+                                            <span id="future-count" class="text-xs text-gray-400">(0)</span>
+                                        </div>
+                                        <button class="toggle-section-btn text-xs px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors" 
+                                                data-section="future" title="Toggle 7+ Days Section">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    <div id="future-vehicles" class="space-y-2 min-h-[40px]">
+                                        <div class="p-2 bg-gray-700 rounded text-center text-gray-500 text-xs">No future vehicles</div>
+                                    </div>
+                                </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    <!-- Nashik TP Column -->
+                        <div class="kanban-column min-w-[300px]">
+                        <div class="kanban-section p-4 rounded-lg border border-gray-700 bg-gray-800/50 flex-1 flex flex-col">
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="text-md font-semibold gilroy text-white flex items-center">
+                                    Nashik TP <span id="nashik-tp-count" class="ml-2 text-xs font-normal text-gray-400">0</span>
+                                </h4>
+                                <button class="add-vehicle-btn w-8 h-8 flex items-center justify-center bg-purple-500 hover:bg-purple-600 text-white rounded-full text-xl">+</button>
+                            </div>
+                            <div id="nashik-tp-vehicles" class="min-h-[60px] flex-1 flex flex-col gap-2 vehicle-drop-zone" data-column="nashik_tp">
+                                <div class="p-3 bg-gray-700 rounded-lg text-center text-gray-300">No Nashik TP vehicles</div>
+                                </div>
+                            </div>
+                        </div>
+
+                    <!-- Kalyan TP Column -->
+                        <div class="kanban-column min-w-[300px]">
+                        <div class="kanban-section p-4 rounded-lg border border-gray-700 bg-gray-800/50 flex-1 flex flex-col">
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="text-md font-semibold gilroy text-white flex items-center">
+                                    Kalyan TP <span id="kalyan-tp-count" class="ml-2 text-xs font-normal text-gray-400">0</span>
+                                </h4>
+                                <button class="add-vehicle-btn w-8 h-8 flex items-center justify-center bg-purple-500 hover:bg-purple-600 text-white rounded-full text-xl">+</button>
+                            </div>
+                            <div id="kalyan-tp-vehicles" class="min-h-[60px] flex-1 flex flex-col gap-2 vehicle-drop-zone" data-column="kalyan_tp">
+                                <div class="p-3 bg-gray-700 rounded-lg text-center text-gray-300">No Kalyan TP vehicles</div>
+                                </div>
+                            </div>
+                        </div>
+
+                    <!-- Ongoing Dealership Column -->
+                        <div class="kanban-column min-w-[300px]">
+                        <div class="kanban-section p-4 rounded-lg border border-gray-700 bg-gray-800/50 flex-1 flex flex-col">
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="text-md font-semibold gilroy text-white flex items-center">
+                                    Ongoing Dealership <span id="dealership-count" class="ml-2 text-xs font-normal text-gray-400">0</span>
+                                </h4>
+                                <button class="add-vehicle-btn w-8 h-8 flex items-center justify-center bg-purple-500 hover:bg-purple-600 text-white rounded-full text-xl">+</button>
+                            </div>
+                            <div id="dealership-vehicles" class="min-h-[60px] flex-1 flex flex-col gap-2 vehicle-drop-zone" data-column="dealership">
+                                <div class="p-3 bg-gray-700 rounded-lg text-center text-gray-300">No dealership vehicles</div>
+                                </div>
+                            </div>
+                        </div>
+
+                    <!-- Non Workshop Active Column -->
+                        <div class="kanban-column min-w-[300px]">
+                        <div class="kanban-section p-4 rounded-lg border border-gray-700 bg-gray-800/50 flex-1 flex flex-col">
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="text-md font-semibold gilroy text-white flex items-center">
+                                    Non Workshop Active <span id="non-workshop-count" class="ml-2 text-xs font-normal text-gray-400">0</span>
+                                </h4>
+                                <button class="add-vehicle-btn w-8 h-8 flex items-center justify-center bg-purple-500 hover:bg-purple-600 text-white rounded-full text-xl">+</button>
+                            </div>
+                            <div id="non-workshop-vehicles" class="min-h-[60px] flex-1 flex flex-col gap-2 vehicle-drop-zone" data-column="non_workshop">
+                                <div class="p-3 bg-gray-700 rounded-lg text-center text-gray-300">No non-workshop vehicles</div>
+                                </div>
+                            </div>
+                        </div>
+
+                    <!-- Payment Pending Column -->
+                        <div class="kanban-column min-w-[300px]">
+                        <div class="kanban-section p-4 rounded-lg border border-gray-700 bg-gray-800/50 flex-1 flex flex-col">
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="text-md font-semibold gilroy text-white flex items-center">
+                                    Payment Pending <span id="payment-pending-count" class="ml-2 text-xs font-normal text-gray-400">0</span>
+                                </h4>
+                                <button class="add-vehicle-btn w-8 h-8 flex items-center justify-center bg-purple-500 hover:bg-purple-600 text-white rounded-full text-xl">+</button>
+                            </div>
+                            <div id="payment-pending-total" class="mb-2 px-3 py-2 rounded bg-orange-900 text-orange-300 text-sm hidden">
+                                Total Due: ₹0
+                            </div>
+                            <div id="payment-pending-vehicles" class="min-h-[60px] flex-1 flex flex-col gap-2 vehicle-drop-zone" data-column="payment_pending">
+                                <div class="p-3 bg-gray-700 rounded-lg text-center text-gray-300">No payment pending vehicles</div>
+                                </div>
+                            </div>
+                        </div>
+
+                    <!-- Upcoming (Non registered) Column -->
+                        <div class="kanban-column min-w-[300px]">
+                        <div class="kanban-section p-4 rounded-lg border border-gray-700 bg-gray-800/50 flex-1 flex flex-col">
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="text-md font-semibold gilroy text-white flex items-center">
+                                    Upcoming (Non registered) <span id="upcoming-non-registered-count" class="ml-2 text-xs font-normal text-gray-400">0</span>
+                                </h4>
+                                <button class="add-vehicle-btn w-8 h-8 flex items-center justify-center bg-purple-500 hover:bg-purple-600 text-white rounded-full text-xl">+</button>
+                            </div>
+                            <div id="upcoming-non-registered-vehicles" class="min-h-[60px] flex-1 flex flex-col gap-2 vehicle-drop-zone" data-column="upcoming_non_registered">
+                                <div class="p-3 bg-gray-700 rounded-lg text-center text-gray-300">No non-registered upcoming vehicles</div>
+                                </div>
+                            </div>
+                        </div>
+
+                    <!-- Completed Column -->
+                        <div class="kanban-column min-w-[300px]">
+                        <div class="kanban-section p-4 rounded-lg border border-gray-700 bg-gray-800/50 flex-1 flex flex-col">
+                            <div class="flex justify-between items-center mb-3">
+                                <h4 class="text-md font-semibold gilroy text-white flex items-center">
+                                    Completed <span id="completed-column-count" class="ml-2 text-xs font-normal text-gray-400">0</span>
+                                </h4>
+                                <button class="add-vehicle-btn w-8 h-8 flex items-center justify-center bg-purple-500 hover:bg-purple-600 text-white rounded-full text-xl">+</button>
+                            </div>
+                            <div id="completed-vehicles" class="min-h-[60px] flex-1 flex flex-col gap-2 vehicle-drop-zone" data-column="completed">
+                                <div class="p-3 bg-gray-700 rounded-lg text-center text-gray-300">No completed vehicles</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Summary Stats and Other Actions -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Summary Stats -->
+                    <div class="summary-stats p-4 md:p-6 rounded-lg shadow-md border text-light-text dark:text-dark-text">
+                        <h2 class="text-xl font-bold mb-4 gilroy">Summary</h2>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="stat-card p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                                <div class="text-sm text-muted">Active Orders</div>
+                                <div id="active-orders-count" class="text-2xl font-bold text-blue-600 dark:text-blue-400">-</div>
+                            </div>
+                            <div class="stat-card p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                                <div class="text-sm text-muted">Completed This Month</div>
+                                <div id="completed-orders-count" class="text-2xl font-bold text-green-600 dark:text-green-400">-</div>
+                            </div>
+                            <div class="stat-card p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                                <div class="text-sm text-muted">Total Customers</div>
+                                <div id="total-customers-count" class="text-2xl font-bold text-purple-600 dark:text-purple-400">-</div>
+                            </div>
+                            <div class="stat-card p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                                <div class="text-sm text-muted">Pending Followups</div>
+                                <div id="pending-followups-count" class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reminders and Followups -->
+                    <div class="reminders p-4 md:p-6 rounded-lg shadow-md border text-light-text dark:text-dark-text">
+                        <h2 class="text-xl font-bold mb-4 gilroy">Reminders & Followups</h2>
+                        <div id="reminders-container" class="space-y-3">
+                            <!-- Reminders will be loaded here dynamically -->
+                            <div class="skeleton-loader p-3 border-l-4 border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 rounded-r-lg animate-pulse">
+                                <div class="h-5 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2"></div>
+                                <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-2"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation (Mobile Only) -->
+    <div class="bottom-nav fixed bottom-0 left-0 right-0 h-16 bg-white dark:bg-dark-panel shadow-md flex items-center justify-around md:hidden z-20">
+        <div class="flex justify-around items-center w-full max-w-md mx-auto py-2">
+            <a href="index.html" class="bottom-nav-icon-btn active" title="Home">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7m-9 2v10a1 1 0 001 1h4a1 1 0 001-1V12m-4-2h4" />
+                </svg>
+            </a>
+            <a href="carprofile.html" class="bottom-nav-icon-btn" title="Car Profile">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+            </a>
+        </div>
+    </div>
+
+    <!-- Task Modal -->
+    <div id="task-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-gray-800 rounded-lg w-full max-w-md mx-4">
+            <div class="p-4">
+                <h3 class="text-lg font-medium text-white mb-4">Add Task</h3>
+                <div class="space-y-4">
+                    <div>
+                        <input type="text" id="customer-search" placeholder="Search customer..." class="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white">
+                        <div id="customer-suggestions" class="hidden mt-1 bg-gray-700 rounded shadow-lg"></div>
+                    </div>
+                    <div>
+                        <input type="text" id="task-name" placeholder="Task name" class="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white">
+                    </div>
+                    <div class="flex space-x-2">
+                        <input type="date" id="task-date" class="flex-1 p-2 bg-gray-700 border border-gray-600 rounded text-white">
+                        <input type="time" id="task-time" class="flex-1 p-2 bg-gray-700 border border-gray-600 rounded text-white">
+                    </div>
+                    <div>
+                        <select id="task-type" class="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white">
+                            <option value="inventory">Send Inventory</option>
+                            <option value="estimate">Estimate</option>
+                            <option value="general">General Task</option>
+                            </select>
+                    </div>
+                </div>
+                <div class="mt-6 flex justify-end space-x-2">
+                    <button id="cancel-task" class="px-4 py-2 text-gray-300 hover:text-white">Cancel</button>
+                    <button id="add-task" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Add Task</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Theme toggle functionality
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const mobileThemeToggleBtn = document.getElementById('mobile-theme-toggle');
+        
+        // Function to set theme
+        function setTheme(isDark) {
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        // Function to toggle theme
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.contains('dark');
+            setTheme(!isDark);
+        }
+
+        // Check initial theme
+        if (localStorage.getItem('theme') === 'dark' || 
+            (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            setTheme(true);
+        } else {
+            setTheme(false);
+        }
+
+        // Add click event listeners to both buttons
+        themeToggleBtn.addEventListener('click', toggleTheme);
+        if (mobileThemeToggleBtn) {
+        mobileThemeToggleBtn.addEventListener('click', toggleTheme);
+        }
+
+        // Listen for system theme changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            if (!localStorage.getItem('theme')) {
+                setTheme(e.matches);
+            }
+        });
+    </script>
+    <script src="../assets/js/service-interlinks.js"></script>
+    <script src="../assets/js/notification-manager.js"></script>
+    <script src="../assets/js/dashboard.js?v=2.0"></script>
+    <script>
+        // Initialize notification manager when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize notification manager for daily non-workshop task reminders
+            if (typeof NotificationManager !== 'undefined') {
+                window.notificationManager = new NotificationManager();
+                console.log('Daily notification system initialized for non-workshop tasks');
+            } else {
+                console.warn('NotificationManager not available');
+            }
+        });
+    </script>
+</body>
+</html>
