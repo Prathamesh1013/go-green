@@ -287,12 +287,8 @@ class _DashboardKanbanBoardState extends State<DashboardKanbanBoard> {
     return TPVehicleCard(
       data: card,
       onTap: () {
-        // Navigate to Job Details using the card ID
-        // Assuming card['id'] corresponds to a job ID or we can navigate to a generic job detail
-        // For now, we'll try to navigate to the jobs detail page. 
-        // If the ID doesn't exist in jobs table, it might show empty/error, 
-        // but this fulfills the "navigate" requirement.
-        context.go('/jobs/${card['id']}');
+        // Navigate to Service Details page
+        context.go('/service-details/${card['id']}');
       },
       onDelete: () => _deleteCard(card['id']),
       onDateChange: (date) => _updateCardDate(card['id'], date),
@@ -308,18 +304,20 @@ class _DashboardKanbanBoardState extends State<DashboardKanbanBoard> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFFf9fafb),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.lightBorder),
+        border: Border.all(color: const Color(0xFFe5e7eb)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          const Text(
             'Kanban Board',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: TextStyle(
+              color: Color(0xFF111827),
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 24),
           Expanded(
@@ -345,7 +343,7 @@ class _DashboardKanbanBoardState extends State<DashboardKanbanBoard> {
                     onAddCard: () => _addCard('upcoming_non_registered'),
                     onCardTap: (cardId) {},
                     onCardDelete: _deleteCard,
-                    headerColor: Colors.grey.withOpacity(0.1),
+                    headerColor: const Color(0xFFf3f4f6), // Light gray
                     itemBuilder: _buildCard,
                     onCardDropped: (data) => _moveCard(data['id'], 'upcoming_non_registered'),
                   ),
@@ -357,7 +355,7 @@ class _DashboardKanbanBoardState extends State<DashboardKanbanBoard> {
                     onAddCard: () => _addCard('third_party_garage'),
                     onCardTap: (cardId) {},
                     onCardDelete: _deleteCard,
-                    headerColor: Colors.teal.withOpacity(0.1),
+                    headerColor: const Color(0xFFccfbf1), // Pastel cyan
                     itemBuilder: _buildCard,
                     onCardDropped: (data) => _moveCard(data['id'], 'third_party_garage'),
                   ),
@@ -369,31 +367,31 @@ class _DashboardKanbanBoardState extends State<DashboardKanbanBoard> {
                     onAddCard: () => _addCard('nashik_tp'),
                     onCardTap: (cardId) {},
                     onCardDelete: _deleteCard,
-                    headerColor: Colors.indigo.withOpacity(0.1),
+                    headerColor: const Color(0xFFe0e7ff), // Pastel indigo
                     itemBuilder: _buildCard,
                     onCardDropped: (data) => _moveCard(data['id'], 'nashik_tp'),
                   ),
-                  // Pune TP
+                  // Kalyan TP
                   KanbanColumn(
-                    title: 'Pune TP',
+                    title: 'Kalyan TP',
                     count: _columnCards['kalyan_tp']!.length,
                     cards: _columnCards['kalyan_tp']!,
                     onAddCard: () => _addCard('kalyan_tp'),
                     onCardTap: (cardId) {},
                     onCardDelete: _deleteCard,
-                    headerColor: Colors.purple.withOpacity(0.1),
+                    headerColor: const Color(0xFFf3e8ff), // Pastel purple
                     itemBuilder: _buildCard,
                     onCardDropped: (data) => _moveCard(data['id'], 'kalyan_tp'),
                   ),
-                  // Non Workshop Activity
+                  // Ongoing Dealership
                   KanbanColumn(
-                    title: 'Non Workshop Activity',
+                    title: 'Ongoing Dealership',
                     count: _columnCards['ongoing_dealership']!.length,
                     cards: _columnCards['ongoing_dealership']!,
                     onAddCard: () => _addCard('ongoing_dealership'),
                     onCardTap: (cardId) {},
                     onCardDelete: _deleteCard,
-                    headerColor: Colors.blue.withOpacity(0.1),
+                    headerColor: const Color(0xFFdbeafe), // Pastel blue
                     itemBuilder: _buildCard,
                     onCardDropped: (data) => _moveCard(data['id'], 'ongoing_dealership'),
                   ),
@@ -405,7 +403,7 @@ class _DashboardKanbanBoardState extends State<DashboardKanbanBoard> {
                     onAddCard: () => _addCard('payment_pending'),
                     onCardTap: (cardId) {},
                     onCardDelete: _deleteCard,
-                    headerColor: Colors.amber.withOpacity(0.1),
+                    headerColor: const Color(0xFFfef3c7), // Pastel yellow
                     itemBuilder: _buildCard,
                     onCardDropped: (data) => _moveCard(data['id'], 'payment_pending'),
                   ),
@@ -417,7 +415,7 @@ class _DashboardKanbanBoardState extends State<DashboardKanbanBoard> {
                     onAddCard: () => _addCard('completed'),
                     onCardTap: (cardId) {},
                     onCardDelete: _deleteCard,
-                    headerColor: Colors.green.withOpacity(0.1),
+                    headerColor: const Color(0xFFd1fae5), // Pastel green
                     itemBuilder: _buildCard,
                     onCardDropped: (data) => _moveCard(data['id'], 'completed'),
                   ),

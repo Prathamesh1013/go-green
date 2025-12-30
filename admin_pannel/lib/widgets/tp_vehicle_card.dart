@@ -56,6 +56,12 @@ class _TPVehicleCardState extends State<TPVehicleCard> {
   }
 
   Widget _buildCardContent(String customerName, String vehicleInfo, DateTime? dueDate, {bool isDragging = false}) {
+    // Parse vehicle info to extract model and registration separately
+    // Assuming format: "Vehicle Model • Registration"
+    List<String> vehicleParts = vehicleInfo.split('•').map((e) => e.trim()).toList();
+    String vehicleModel = vehicleParts.isNotEmpty ? vehicleParts[0] : vehicleInfo;
+    String vehicleReg = vehicleParts.length > 1 ? vehicleParts[1] : '';
+    
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovering = true),
       onExit: (_) => setState(() => _isHovering = false),
@@ -65,98 +71,119 @@ class _TPVehicleCardState extends State<TPVehicleCard> {
           width: double.infinity,
           margin: const EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
-            color: AppColors.gray800, // Dark gray background
-            borderRadius: BorderRadius.circular(12),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: _isHovering ? AppColors.blue500 : AppColors.gray700, // Brighten on hover
-              width: _isHovering ? 1.5 : 1,
+              color: _isHovering ? const Color(0xFF3b82f6) : const Color(0xFFe5e7eb),
+              width: 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 3,
+                offset: const Offset(0, 1),
               ),
             ],
           ),
           child: Padding(
             padding: const EdgeInsets.all(12),
-            child: Row(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Left Side (Info)
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        customerName,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        vehicleInfo,
-                        style: const TextStyle(
-                          color: AppColors.gray400, // Light gray
-                          fontSize: 12,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // Right Side (Schedule)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    GestureDetector(
-                      onTap: () async {
-                        // Quick Date Edit Popup
-                        final DateTime? picked = await showDatePicker(
-                          context: context,
-                          initialDate: dueDate ?? DateTime.now(),
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2101),
-                        );
-                        if (picked != null) {
-                          widget.onDateChange(picked);
-                        }
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.blue900, // Blue pill bg
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Text(
-                          dueDate != null
-                              ? '${dueDate.day} ${_getMonthName(dueDate.month)}'
-                              : 'No Date',
-                          style: const TextStyle(
-                            color: AppColors.blue200, // Text blue-300 equivalent
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
+                    // Left Side (Info)
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Garage/Vendor Name (Top - Bold & Larger)
+                          Text(
+                            customerName,
+                            style: const TextStyle(
+                              color: Color(0xFF111827),
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
+                          const SizedBox(height: 4),
+                          // Vehicle Model/Variant
+                          Text(
+                            vehicleModel,
+                            style: const TextStyle(
+                              color: Color(0xFF6b7280),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (vehicleReg.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            // Vehicle Registration Number
+                            Text(
+                              vehicleReg,
+                              style: const TextStyle(
+                                color: Color(0xFF9ca3af),
+                                fontSize: 11,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      dueDate != null
-                          ? '${dueDate.hour.toString().padLeft(2, '0')}:${dueDate.minute.toString().padLeft(2, '0')}'
-                          : '--:--',
-                      style: const TextStyle(
-                        color: AppColors.gray500,
-                        fontSize: 10,
-                      ),
+                    const SizedBox(width: 12),
+                    // Right Side (Schedule)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        GestureDetector(
+                          onTap: () async {
+                            // Quick Date Edit Popup
+                            final DateTime? picked = await showDatePicker(
+                              context: context,
+                              initialDate: dueDate ?? DateTime.now(),
+                              firstDate: DateTime(2000),
+                              lastDate: DateTime(2101),
+                            );
+                            if (picked != null) {
+                              widget.onDateChange(picked);
+                            }
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFdbeafe), // Light blue bg
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              dueDate != null
+                                  ? '${dueDate.day} ${_getMonthName(dueDate.month)} ${dueDate.year}'
+                                  : 'No Date',
+                              style: const TextStyle(
+                                color: Color(0xFF2563eb), // Blue text
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          dueDate != null
+                              ? '${dueDate.hour.toString().padLeft(2, '0')}:${dueDate.minute.toString().padLeft(2, '0')} ${dueDate.hour >= 12 ? 'pm' : 'am'}'
+                              : '--:--',
+                          style: const TextStyle(
+                            color: Color(0xFF9ca3af),
+                            fontSize: 10,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

@@ -732,5 +732,89 @@ class SupabaseService {
       return [];
     }
   }
+
+  // ==================== SERVICE DETAILS ====================
+  
+  Future<Map<String, dynamic>?> getServiceDetailByCardId(String cardId) async {
+    try {
+      // Get the kanban card first
+      final cardResponse = await _client
+          .from('kanban_cards')
+          .select('*')
+          .eq('id', cardId)
+          .maybeSingle();
+      
+      if (cardResponse == null) return null;
+
+      // Get service items for this card
+      final itemsResponse = await _client
+          .from('service_items')
+          .select('*')
+          .eq('kanban_card_id', cardId);
+
+      return {
+        ...cardResponse,
+        'service_items': itemsResponse as List,
+      };
+    } catch (e) {
+      debugPrint('Error fetching service detail: $e');
+      return null;
+    }
+  }
+
+  Future<void> updateServiceDetail(String cardId, Map<String, dynamic> data) async {
+    try {
+      await _client.from('kanban_cards').update({
+        'customer_name': data['customer_name'],
+        'customer_phone': data['customer_phone'],
+        'customer_email': data['customer_email'],
+        'gst_number': data['gst_number'],
+        'vehicle_reg_number': data['vehicle_reg_number'],
+        'vehicle_make_model': data['vehicle_make_model'],
+        'vehicle_year': data['vehicle_year'],
+        'vehicle_fuel_type': data['vehicle_fuel_type'],
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', cardId);
+    } catch (e) {
+      throw Exception('Error updating service detail: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> addServiceItem(String cardId, Map<String, dynamic> itemData) async {
+    try {
+      // Remove 'id' from itemData if present - let database generate UUID
+      final dataToInsert = Map<String, dynamic>.from(itemData);
+      dataToInsert.remove('id');
+      
+      final response = await _client.from('service_items').insert({
+        'kanban_card_id': cardId,
+        ...dataToInsert,
+        'created_at': DateTime.now().toIso8601String(),
+      }).select().single();
+      
+      return response;
+    } catch (e) {
+      throw Exception('Error adding service item: $e');
+    }
+  }
+
+  Future<void> updateServiceItem(String itemId, Map<String, dynamic> itemData) async {
+    try {
+      await _client.from('service_items').update({
+        ...itemData,
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', itemId);
+    } catch (e) {
+      throw Exception('Error updating service item: $e');
+    }
+  }
+
+  Future<void> deleteServiceItem(String itemId) async {
+    try {
+      await _client.from('service_items').delete().eq('id', itemId);
+    } catch (e) {
+      throw Exception('Error deleting service item: $e');
+    }
+  }
 }
 

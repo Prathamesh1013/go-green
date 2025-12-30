@@ -8,6 +8,7 @@ import 'package:gogreen_admin/pages/job_management_page.dart';
 import 'package:gogreen_admin/pages/interaction_detail_page.dart';
 import 'package:gogreen_admin/pages/compliance_dashboard_page.dart';
 import 'package:gogreen_admin/pages/hub_performance_page.dart';
+import 'package:gogreen_admin/pages/service_details_page.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -78,6 +79,14 @@ class AppRouter {
         builder: (context, state) {
           final interactionId = state.pathParameters['id']!;
           return InteractionDetailPage(interactionId: interactionId);
+        },
+      ),
+      GoRoute(
+        path: '/service-details/:id',
+        name: 'service-detail',
+        builder: (context, state) {
+          final serviceId = state.pathParameters['id']!;
+          return ServiceDetailsPage(serviceId: serviceId);
         },
       ),
     ],
