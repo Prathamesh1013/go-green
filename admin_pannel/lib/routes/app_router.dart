@@ -8,6 +8,7 @@ import 'package:gogreen_admin/pages/interaction_detail_page.dart';
 import 'package:gogreen_admin/pages/compliance_dashboard_page.dart';
 import 'package:gogreen_admin/pages/hub_performance_page.dart';
 import 'package:gogreen_admin/pages/service_details_page.dart';
+import 'package:gogreen_admin/pages/settings_page.dart';
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -74,6 +75,11 @@ class AppRouter {
           final serviceId = state.pathParameters['id']!;
           return ServiceDetailsPage(serviceId: serviceId);
         },
+      ),
+      GoRoute(
+        path: '/settings',
+        name: 'settings',
+        builder: (context, state) => const SettingsPage(),
       ),
     ],
   );

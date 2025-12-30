@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:gogreen_admin/theme/app_colors.dart';
 import 'package:gogreen_admin/widgets/kanban_column.dart';
 import 'package:gogreen_admin/widgets/upcoming_column.dart';
+import 'package:gogreen_admin/widgets/dealership_column.dart';
 import 'package:gogreen_admin/services/supabase_service.dart';
 import 'package:gogreen_admin/widgets/tp_vehicle_card.dart';
 
@@ -33,6 +34,13 @@ class _DashboardKanbanBoardState extends State<DashboardKanbanBoard> {
     'today': [],
     'tomorrow': [],
     '7_days': [],
+  };
+  
+  // Dealership subcategories (locations)
+  Map<String, List<Map<String, dynamic>>> _dealershipSubcategories = {
+    'nashik': [],
+    'pune_station1': [],
+    'pune_station2': [],
   };
   
   bool _isLoading = true;
@@ -67,6 +75,12 @@ class _DashboardKanbanBoardState extends State<DashboardKanbanBoard> {
         '7_days': [],
       };
 
+      final dealershipSub = <String, List<Map<String, dynamic>>>{
+        'nashik': [],
+        'pune_station1': [],
+        'pune_station2': [],
+      };
+
       for (var card in cards) {
         final column = card['column_status'] ?? 'nashik_tp';
         if (grouped.containsKey(column)) {
@@ -90,12 +104,21 @@ class _DashboardKanbanBoardState extends State<DashboardKanbanBoard> {
               upcomingSub['7_days']!.add(card);
             }
           }
+          
+          // Categorize dealership cards by location
+          if (column == 'upcoming_non_registered') {
+            final location = card['location'] ?? 'nashik'; // Default to nashik
+            if (dealershipSub.containsKey(location)) {
+              dealershipSub[location]!.add(card);
+            }
+          }
         }
       }
 
       setState(() {
         _columnCards = grouped;
         _upcomingSubcategories = upcomingSub;
+        _dealershipSubcategories = dealershipSub;
         _isLoading = false;
       });
     } catch (e) {
@@ -104,9 +127,11 @@ class _DashboardKanbanBoardState extends State<DashboardKanbanBoard> {
   }
 
   Future<void> _addCard(String columnStatus) async {
-    final titleController = TextEditingController();
-    final descriptionController = TextEditingController();
-    DateTime? selectedDate;
+    final searchController = TextEditingController();
+    String selectedServiceType = 'Periodic Service';
+    String selectedLocation = 'nashik'; // Default location for dealership
+    DateTime selectedDate = DateTime.now();
+    TimeOfDay selectedTime = TimeOfDay.now();
 
     await showDialog(
       context: context,
@@ -114,76 +139,338 @@ class _DashboardKanbanBoardState extends State<DashboardKanbanBoard> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text('Add New Card'),
+              backgroundColor: const Color(0xFF1a1f2e),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              contentPadding: const EdgeInsets.all(20),
               content: SizedBox(
-                width: 400,
+                width: 300,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    TextField(
-                      controller: titleController,
-                      decoration: const InputDecoration(
-                        labelText: 'Title *',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: descriptionController,
-                      decoration: const InputDecoration(
-                        labelText: 'Description',
-                        border: OutlineInputBorder(),
-                      ),
-                      maxLines: 3,
-                    ),
-                    const SizedBox(height: 16),
-                    InkWell(
-                      onTap: () async {
-                        final date = await showDatePicker(
-                          context: context,
-                          initialDate: DateTime.now(),
-                          firstDate: DateTime.now(),
-                          lastDate: DateTime.now().add(const Duration(days: 365)),
-                        );
-                        if (date != null) {
-                          setDialogState(() => selectedDate = date);
+                    // Universal Search with Autocomplete
+                    Autocomplete<Map<String, dynamic>>(
+                      optionsBuilder: (TextEditingValue textEditingValue) async {
+                        if (textEditingValue.text.isEmpty) {
+                          print('🔍 Autocomplete: Empty text, returning empty results');
+                          return const Iterable<Map<String, dynamic>>.empty();
+                        }
+                        
+                        print('🔍 Autocomplete: Searching for "${textEditingValue.text}"');
+                        try {
+                          final results = await _supabaseService.universalSearch(textEditingValue.text);
+                          print('🔍 Autocomplete: Got ${results.length} results');
+                          return results;
+                        } catch (e) {
+                          print('❌ Autocomplete error: $e');
+                          return const Iterable<Map<String, dynamic>>.empty();
                         }
                       },
-                      child: InputDecorator(
-                        decoration: const InputDecoration(
-                          labelText: 'Due Date',
-                          border: OutlineInputBorder(),
-                          suffixIcon: Icon(Icons.calendar_today),
-                        ),
-                        child: Text(
-                          selectedDate != null
-                              ? '${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}'
-                              : 'Select date',
-                          style: TextStyle(
-                            color: selectedDate != null ? null : Colors.grey,
+                      displayStringForOption: (Map<String, dynamic> option) {
+                        return option['customer_name'] ?? '';
+                      },
+                      onSelected: (Map<String, dynamic> selection) {
+                        print('✅ Selected: ${selection['customer_name']}');
+                        setDialogState(() {
+                          searchController.text = selection['customer_name'] ?? '';
+                        });
+                      },
+                      fieldViewBuilder: (
+                        BuildContext context,
+                        TextEditingController fieldTextEditingController,
+                        FocusNode fieldFocusNode,
+                        VoidCallback onFieldSubmitted,
+                      ) {
+                        return TextField(
+                          controller: fieldTextEditingController,
+                          focusNode: fieldFocusNode,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            hintText: 'Search customer or vehicle...',
+                            hintStyle: TextStyle(color: Colors.grey[400]),
+                            filled: true,
+                            fillColor: const Color(0xFF2d3548),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: BorderSide.none,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                          ),
+                        );
+                      },
+                      optionsViewBuilder: (context, onSelected, options) {
+                        print('🔍 Options view builder: ${options.length} options');
+                        if (options.isEmpty) {
+                          return const SizedBox.shrink();
+                        }
+                        return Align(
+                          alignment: Alignment.topLeft,
+                          child: Material(
+                            elevation: 8,
+                            borderRadius: BorderRadius.circular(8),
+                            color: const Color(0xFF2d3548),
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(
+                                maxHeight: 200,
+                                maxWidth: 300,
+                              ),
+                              child: ListView.builder(
+                                shrinkWrap: true,
+                                padding: const EdgeInsets.all(0),
+                                itemCount: options.length,
+                                itemBuilder: (context, index) {
+                                  final option = options.elementAt(index);
+                                  
+                                  return InkWell(
+                                    onTap: () {
+                                      print('🔍 Tapped option: ${option['customer_name']}');
+                                      onSelected(option);
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 12,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        border: index < options.length - 1
+                                            ? Border(
+                                                bottom: BorderSide(
+                                                  color: Colors.grey.withOpacity(0.3),
+                                                  width: 1,
+                                                ),
+                                              )
+                                            : null,
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            option['customer_name'] ?? '',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 15,
+                                            ),
+                                          ),
+                                          if (option['vehicle_details'] != null)
+                                            const SizedBox(height: 4),
+                                          if (option['vehicle_details'] != null)
+                                            Text(
+                                              option['vehicle_details'],
+                                              style: TextStyle(
+                                                color: Colors.grey[400],
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Date and Time Row
+                    Row(
+                      children: [
+                        // Date Picker
+                        Expanded(
+                          child: InkWell(
+                            onTap: () async {
+                              final date = await showDatePicker(
+                                context: context,
+                                initialDate: selectedDate,
+                                firstDate: DateTime.now(),
+                                lastDate: DateTime.now().add(const Duration(days: 365)),
+                              );
+                              if (date != null) {
+                                setDialogState(() => selectedDate = date);
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF2d3548),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    '${selectedDate.day.toString().padLeft(2, '0')}-${selectedDate.month.toString().padLeft(2, '0')}-${selectedDate.year}',
+                                    style: const TextStyle(color: Colors.white),
+                                  ),
+                                  const Spacer(),
+                                  const Icon(Icons.calendar_today, color: Colors.white, size: 18),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
+                        const SizedBox(width: 12),
+                        // Time Picker
+                        Expanded(
+                          child: InkWell(
+                            onTap: () async {
+                              final time = await showTimePicker(
+                                context: context,
+                                initialTime: selectedTime,
+                              );
+                              if (time != null) {
+                                setDialogState(() => selectedTime = time);
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF2d3548),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    '${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}',
+                                    style: const TextStyle(color: Colors.white),
+                                  ),
+                                  const Spacer(),
+                                  const Icon(Icons.access_time, color: Colors.white, size: 18),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Service Type Dropdown
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2d3548),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: DropdownButton<String>(
+                        value: selectedServiceType,
+                        isExpanded: true,
+                        underline: const SizedBox(),
+                        dropdownColor: const Color(0xFF2d3548),
+                        style: const TextStyle(color: Colors.white, fontSize: 14),
+                        icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
+                        onChanged: (String? newValue) {
+                          if (newValue != null) {
+                            setDialogState(() => selectedServiceType = newValue);
+                          }
+                        },
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'Periodic Service',
+                            child: Text('Periodic Service'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Suspension Overhaul',
+                            child: Text('Suspension Overhaul'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'AC Service',
+                            child: Text('AC Service'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Tyre Changes',
+                            child: Text('Tyre Changes'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Wheel Alignment and Balance',
+                            child: Text('Wheel Alignment and Balance'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'General',
+                            child: Text('General'),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: titleController.text.trim().isEmpty
-                      ? null
-                      : () async {
+                    const SizedBox(height: 16),
+                    
+                    // Location Dropdown (only for Dealership)
+                    if (columnStatus == 'upcoming_non_registered') ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2d3548),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: DropdownButton<String>(
+                          value: selectedLocation,
+                          isExpanded: true,
+                          underline: const SizedBox(),
+                          dropdownColor: const Color(0xFF2d3548),
+                          style: const TextStyle(color: Colors.white, fontSize: 14),
+                          icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
+                          hint: const Text('Select Location', style: TextStyle(color: Colors.white70)),
+                          onChanged: (String? newValue) {
+                            if (newValue != null) {
+                              setDialogState(() => selectedLocation = newValue);
+                            }
+                          },
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'nashik',
+                              child: Text('Nashik'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'pune_station1',
+                              child: Text('Pune Station 1'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'pune_station2',
+                              child: Text('Pune Station 2'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+                    
+                    // Add Task Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () async {
                           try {
+                            final title = searchController.text.trim().isEmpty
+                                ? selectedServiceType
+                                : searchController.text.trim();
+                            
+                            final dateTime = DateTime(
+                              selectedDate.year,
+                              selectedDate.month,
+                              selectedDate.day,
+                              selectedTime.hour,
+                              selectedTime.minute,
+                            );
+                            
                             await _supabaseService.createKanbanCard({
-                              'title': titleController.text.trim(),
-                              'description': descriptionController.text.trim(),
+                              'title': title,
+                              'description': selectedServiceType,
                               'column_status': columnStatus,
-                              'due_date': selectedDate?.toIso8601String(),
+                              'due_date': dateTime.toIso8601String(),
                               'position': _columnCards[columnStatus]!.length,
+                              if (columnStatus == 'upcoming_non_registered') 'location': selectedLocation,
                             });
                             
                             Navigator.pop(dialogContext);
@@ -192,7 +479,7 @@ class _DashboardKanbanBoardState extends State<DashboardKanbanBoard> {
                             if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Card added successfully!'),
+                                  content: Text('Task added successfully!'),
                                   backgroundColor: AppColors.success,
                                 ),
                               );
@@ -201,20 +488,34 @@ class _DashboardKanbanBoardState extends State<DashboardKanbanBoard> {
                             if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text('Failed to add card: $e'),
+                                  content: Text('Failed to add task: $e'),
                                   backgroundColor: AppColors.error,
                                 ),
                               );
                             }
                           }
                         },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text('Add Card'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2563eb),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                          'Add Task',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             );
           },
         );
@@ -335,15 +636,16 @@ class _DashboardKanbanBoardState extends State<DashboardKanbanBoard> {
                     itemBuilder: _buildCard,
                     onCardDropped: (data) => _moveCard(data['id'], 'upcoming'),
                   ),
-                  // Dealership
-                  KanbanColumn(
-                    title: 'Dealership',
-                    count: _columnCards['upcoming_non_registered']!.length,
-                    cards: _columnCards['upcoming_non_registered']!,
+                  // Dealership with location subcategories
+                  DealershipColumn(
+                    subcategories: _dealershipSubcategories ?? {
+                      'nashik': [],
+                      'pune_station1': [],
+                      'pune_station2': [],
+                    },
                     onAddCard: () => _addCard('upcoming_non_registered'),
                     onCardTap: (cardId) {},
                     onCardDelete: _deleteCard,
-                    headerColor: const Color(0xFFf3f4f6), // Light gray
                     itemBuilder: _buildCard,
                     onCardDropped: (data) => _moveCard(data['id'], 'upcoming_non_registered'),
                   ),

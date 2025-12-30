@@ -816,5 +816,138 @@ class SupabaseService {
       throw Exception('Error deleting service item: $e');
     }
   }
+
+  // ==================== UNIVERSAL SEARCH ====================
+  
+  Future<List<Map<String, dynamic>>> universalSearch(String query) async {
+    if (query.trim().isEmpty) {
+      debugPrint('🔍 Search query is empty');
+      return [];
+    }
+    
+    debugPrint('🔍 Starting universal search for: "$query"');
+    
+    try {
+      final searchTerm = '%${query.trim().toLowerCase()}%';
+      final results = <Map<String, dynamic>>[];
+      
+      // Search vehicles first
+      try {
+        debugPrint('🔍 Searching crm_vehicles table...');
+        final vehicleResponse = await _client
+            .from('crm_vehicles')
+            .select('vehicle_id, registration_number, make_model_year, customer_id')
+            .or('registration_number.ilike.$searchTerm,make_model_year.ilike.$searchTerm')
+            .limit(10);
+        
+        debugPrint('🔍 Found ${(vehicleResponse as List).length} vehicles');
+        
+        // Get unique customer IDs
+        final customerIds = (vehicleResponse as List)
+            .map((v) => v['customer_id'] as String?)
+            .where((id) => id != null)
+            .toSet()
+            .toList();
+        
+        debugPrint('🔍 Fetching ${customerIds.length} customer records...');
+        
+        // Fetch customer details for these vehicles
+        Map<String, Map<String, dynamic>> customers = {};
+        if (customerIds.isNotEmpty) {
+          try {
+            final customerResponse = await _client
+                .from('crm_customers')
+                .select('customer_id, full_name, mobile_number')
+                .inFilter('customer_id', customerIds);
+            
+            debugPrint('🔍 Found ${(customerResponse as List).length} customers');
+            
+            for (var customer in (customerResponse as List)) {
+              customers[customer['customer_id']] = customer;
+            }
+          } catch (e) {
+            debugPrint('❌ Error fetching customers: $e');
+          }
+        }
+        
+        // Combine vehicle and customer data
+        for (var vehicle in (vehicleResponse as List)) {
+          final customerId = vehicle['customer_id'];
+          final customer = customers[customerId];
+          final customerName = customer?['full_name'] ?? 'Unknown Customer';
+          
+          results.add({
+            'type': 'vehicle',
+            'id': vehicle['vehicle_id'],
+            'customer_id': customerId,
+            'customer_name': customerName,
+            'vehicle_details': '${vehicle['make_model_year']} - ${vehicle['registration_number']}',
+            'registration_number': vehicle['registration_number'],
+            'make_model': vehicle['make_model_year'],
+          });
+        }
+        
+        debugPrint('🔍 Total results: ${results.length}');
+      } catch (e) {
+        debugPrint('❌ Error searching vehicles: $e');
+        debugPrint('❌ Error details: ${e.toString()}');
+      }
+      
+      // Also search customers by name
+      try {
+        debugPrint('🔍 Searching crm_customers by name...');
+        final customerResponse = await _client
+            .from('crm_customers')
+            .select('customer_id, full_name, mobile_number')
+            .ilike('full_name', searchTerm)
+            .limit(5);
+        
+        debugPrint('🔍 Found ${(customerResponse as List).length} customers by name');
+        
+        // For each customer, try to find their vehicles
+        for (var customer in (customerResponse as List)) {
+          try {
+            final vehiclesResponse = await _client
+                .from('crm_vehicles')
+                .select('vehicle_id, registration_number, make_model_year')
+                .eq('customer_id', customer['customer_id'])
+                .limit(1);
+            
+            if ((vehiclesResponse as List).isNotEmpty) {
+              final vehicle = vehiclesResponse[0];
+              // Check if we already have this combination
+              final alreadyExists = results.any((r) => 
+                r['customer_id'] == customer['customer_id'] && 
+                r['id'] == vehicle['vehicle_id']
+              );
+              
+              if (!alreadyExists) {
+                results.add({
+                  'type': 'vehicle',
+                  'id': vehicle['vehicle_id'],
+                  'customer_id': customer['customer_id'],
+                  'customer_name': customer['full_name'],
+                  'vehicle_details': '${vehicle['make_model_year']} - ${vehicle['registration_number']}',
+                  'registration_number': vehicle['registration_number'],
+                  'make_model': vehicle['make_model_year'],
+                });
+              }
+            }
+          } catch (e) {
+            debugPrint('❌ Error fetching vehicles for customer: $e');
+          }
+        }
+      } catch (e) {
+        debugPrint('❌ Error searching customers: $e');
+      }
+      
+      debugPrint('🔍 Final results count: ${results.length}');
+      return results.take(10).toList();
+    } catch (e) {
+      debugPrint('❌ Error in universal search: $e');
+      debugPrint('❌ Stack trace: ${StackTrace.current}');
+      return [];
+    }
+  }
 }
 
