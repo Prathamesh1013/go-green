@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#1e2636">
+    <meta name="description" content="Car service management application">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Carigar">
+    <link rel="manifest" href="/manifest.json">
+    <title>Car Profile - Carigar</title>
+    <script>
+        // Initialize dark mode before any rendering
+        if (localStorage.getItem('theme') === 'light') {
+            document.documentElement.classList.remove('dark');
+        } else {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
+    <link href="../assets/css/tailwind.css" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/look.css">
+    <link rel="stylesheet" href="../assets/css/dark-mode.css">
+    <script src="../assets/js/dark-mode-init.js"></script>
+    <script src="../assets/js/supabase-config.js"></script>
+    <script src="../assets/js/supabase-db.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', async () => {
+                try {
+                    // Unregister any existing service workers first
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for(let registration of registrations) {
+                        await registration.unregister();
+                        console.log('Service worker unregistered');
+                    }
+                    
+                    // Register the new service worker
+                    const registration = await navigator.serviceWorker.register('/sw.js', {
+                        updateViaCache: 'none'
+                    });
+                    console.log('ServiceWorker registration successful');
+                } catch (err) {
+                    console.log('ServiceWorker registration failed: ', err);
+                }
+            });
+        }
+    </script>
+    <style>
+        :root {
+            --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        
+        body {
+            padding-bottom: calc(4rem + var(--safe-area-inset-bottom));
+        }
+
+        .card {
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .dark .card {
+            background-color: #1e2636;
+        }
+        
+        .field-label {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        
+        .field-value {
+            font-weight: 500;
+            font-size: 16px;
+        }
+        
+        .dark .field-label {
+            color: #9ca3af;
+        }
+        
+        .dark .field-value {
+            color: #e5e7eb;
+        }
+        
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-active {
+            background-color: #d1fae5;
+            color: #047857;
+        }
+        
+        .dark .status-active {
+            background-color: rgba(4, 120, 87, 0.2);
+            color: #34d399;
+        }
+        
+        .status-inactive {
+            background-color: #f3f4f6;
+            color: #6b7280;
+        }
+        
+        .dark .status-inactive {
+            background-color: rgba(107, 114, 128, 0.2);
+            color: #9ca3af;
+        }
+
+        .dark .bg-gray-800 {
+            background-color: #1e2636;
+        }
+
+        .dark .text-gray-400 {
+            color: #9ca3af;
+        }
+
+        .dark .hover\:text-white:hover {
+            color: #ffffff;
+        }
+
+        /* Search Results Dropdown */
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #1e2636;
+            border-radius: 8px;
+            margin-top: 4px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 50;
+        }
+
+        .search-result-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+        }
+
+        .search-result-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Mobile Optimizations */
+        @media (max-width: 768px) {
+            /* Hide top navbar on mobile - use only bottom nav */
+            .navbar {
+                display: none;
+            }
+
+            /* Create a mobile-only search header */
+            .mobile-search-header {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 50;
+                background: #1f2937;
+                padding: 1rem;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+
+            .mobile-search-header .search-container {
+                width: 100%;
+            }
+
+            .mobile-search-header .search-box {
+                width: 100%;
+                background: rgba(255, 255, 255, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                color: #fff;
+                font-size: 16px; /* Prevent zoom on iOS */
+                padding: 12px 16px;
+                padding-left: 40px;
+            }
+
+            .mobile-search-header .search-box::placeholder {
+                color: rgba(255, 255, 255, 0.6);
+            }
+
+            .content-area {
+                margin-top: 80px; /* Account for mobile search header */
+                margin-bottom: 80px; /* Account for bottom nav */
+                padding: 0.75rem;
+                min-height: calc(100vh - 160px);
+            }
+
+            /* Better spacing for mobile search instructions */
+            .mobile-search-instructions {
+                padding: 1.5rem 1rem;
+                text-align: center;
+            }
+
+            .mobile-search-instructions h3 {
+                font-size: 1.25rem;
+                margin-bottom: 1rem;
+            }
+
+            .mobile-search-instructions .search-examples {
+                margin-top: 1.5rem;
+            }
+
+            .mobile-search-instructions .search-examples button {
+                margin: 0.25rem;
+                padding: 0.5rem 1rem;
+                font-size: 0.875rem;
+            }
+
+            .card {
+                padding: 16px;
+                margin-bottom: 16px;
+            }
+
+            /* Make search results full width on mobile */
+            .search-results {
+                left: 1rem;
+                right: 1rem;
+                top: calc(100% + 8px);
+                max-height: 60vh;
+            }
+
+            /* Optimize vehicle details panel for mobile */
+            .vehicle-details-panel {
+                padding: 12px;
+            }
+
+            .vehicle-details-panel .grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            /* Make tabs scrollable on mobile */
+            .card.mt-6 .flex.border-b {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                -ms-overflow-style: none;
+            }
+
+            .card.mt-6 .flex.border-b::-webkit-scrollbar {
+                display: none;
+            }
+        }
+
+        /* Fix for iOS safe areas */
+        @supports (padding: max(0px)) {
+            .bottom-nav {
+                padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+                height: calc(4rem + env(safe-area-inset-bottom));
+            }
+        }
+
+        /* Vehicle selection cards */
+        .vehicle-selection-card {
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+
+        .vehicle-selection-card:hover {
+            border-color: #3b82f6;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .dark .vehicle-selection-card {
+            background-color: #374151;
+        }
+
+        .dark .vehicle-selection-card:hover {
+            background-color: #4b5563;
+        }
+
+        /* Copyable elements */
+        .copyable-container {
+            position: relative;
+        }
+
+        .copyable-container .copy-btn {
+            transition: opacity 0.2s ease;
+        }
+
+        .copyable-container:hover .copy-btn {
+            opacity: 1 !important;
+        }
+
+        .copy-btn:hover {
+            background-color: rgba(75, 85, 99, 0.8);
+        }
+
+        .dark .copy-btn:hover {
+            background-color: rgba(107, 114, 128, 0.8);
+        }
+
+        /* Make field values have group hover for copy buttons */
+        .field-value .copyable-container,
+        .group .copyable-container {
+            width: 100%;
+        }
+
+        /* Ensure copy buttons don't interfere with clicks on vehicle cards */
+        .vehicle-selection-card .copy-btn {
+            z-index: 10;
+            position: relative;
+        }
+
+        .vehicle-selection-card .copy-btn:hover {
+            background-color: rgba(59, 130, 246, 0.2);
+        }
+    </style>
+
+    <script src="../assets/js/supabase.js"></script>
+    <script src="../assets/js/auth-middleware.js"></script>
+</head>
+<body class="flex min-h-screen flex-col bg-gray-900 text-white">
+    <!-- Mobile Search Header (Mobile Only) -->
+    <div class="mobile-search-header md:hidden">
+        <div class="flex items-center gap-3">
+            <h1 class="text-lg font-semibold text-white">Carigar</h1>
+            <div class="search-container relative flex-1">
+                <input type="text" id="mobile-global-search" 
+                       placeholder="Search vehicles, customers..." 
+                       class="search-box w-full pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <svg class="w-5 h-5 absolute left-3 top-2.5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <div id="mobile-search-results" class="search-results hidden"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col">
+        <!-- Navbar (Desktop Only) -->
+        <nav class="navbar bg-gray-800 shadow-md hidden md:flex">
+            <div class="container mx-auto px-4 h-16 flex items-center gap-4">
+                <a href="index.html" class="text-2xl font-semibold gilroy text-white whitespace-nowrap">Carigar</a>
+                
+                <div class="search-container relative flex-1 max-w-xl">
+                    <input type="text" id="global-search" 
+                           placeholder="Search vehicles, customers, orders..." 
+                           class="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-gray-400">
+                    <svg class="w-5 h-5 absolute left-3 top-2.5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <div id="search-results" class="search-results hidden"></div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <a href="index.html" class="nav-icon-btn text-gray-400 hover:text-white p-2" title="Home">
+                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7m-9 2v10a1 1 0 001 1h4a1 1 0 001-1V12m-4-2h4" />
+                        </svg>
+                    </a>
+                    <a href="order.html" class="nav-icon-btn text-gray-400 hover:text-white p-2" title="Order">
+                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                    </a>
+                    <a href="inventory.html" class="nav-icon-btn text-gray-400 hover:text-white p-2" title="Inventory">
+                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 13H5v6a2 2 0 002 2h10a2 2 0 002-2v-6m-7-2V3m0 0L9 7m3-4l3 4" />
+                        </svg>
+                    </a>
+                    <button id="theme-toggle" class="p-2 rounded-lg bg-gray-700 text-gray-400 hover:text-white">
+                        <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="content-area container mx-auto px-4 py-6">
+            <!-- Vehicle Details Panel -->
+            <div id="vehicle-details-panel" class="card">
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <h2 id="car-title" class="text-xl font-bold text-white"></h2>
+                        <p id="car-reg" class="text-gray-400 mt-1"></p>
+                    </div>
+                    <span id="car-year" class="status-badge status-active"></span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-6">
+                    <div class="group">
+                        <p class="field-label">Owner</p>
+                        <p id="car-owner" class="field-value"></p>
+                    </div>
+                    <div class="group">
+                        <p class="field-label">Odometer</p>
+                        <p id="car-odometer" class="field-value"></p>
+                    </div>
+                    <div class="group">
+                        <p class="field-label">Fuel Type</p>
+                        <p id="car-fuel" class="field-value"></p>
+                    </div>
+                    <div class="group">
+                        <p class="field-label">Insurance Valid Till</p>
+                        <p id="car-insurance" class="field-value"></p>
+                    </div>
+                    <div class="group">
+                        <p class="field-label">PUC Valid Till</p>
+                        <p id="car-puc" class="field-value"></p>
+                    </div>
+                    <div class="group">
+                        <p class="field-label">RC Status</p>
+                        <p class="field-value"><span id="rc-status" class="status-badge"></span></p>
+                    </div>
+                    <div class="group">
+                        <p class="field-label">Last Service</p>
+                        <p id="last-service" class="field-value"></p>
+                    </div>
+                    <div class="group">
+                        <p class="field-label">Next Service Due</p>
+                        <p id="next-service" class="field-value"></p>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap gap-3">
+                    <button onclick="editVehicleInfo()" 
+                            class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white">
+                        Edit Profile
+                    </button>
+                    <button onclick="addVehicleToCustomer()" 
+                            class="px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Add Vehicle
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="card mt-6">
+                <div class="flex border-b border-gray-700 mb-4 overflow-x-auto">
+                    <button onclick="switchTab('service-history')" 
+                            class="tab-btn active py-2 px-4 border-b-2 border-blue-500 font-medium text-blue-400 whitespace-nowrap">
+                        Service History
+                    </button>
+                    <button onclick="switchTab('documents')" 
+                            class="tab-btn py-2 px-4 text-gray-400 hover:text-white whitespace-nowrap">
+                        Documents
+                    </button>
+                    <button onclick="switchTab('notes')" 
+                            class="tab-btn py-2 px-4 text-gray-400 hover:text-white whitespace-nowrap">
+                        Notes
+                    </button>
+                </div>
+                
+                <div class="tab-content">
+                    <!-- Service History Tab -->
+                    <div class="service-history-tab">
+                        <!-- Content will be loaded dynamically -->
+                    </div>
+                    
+                    <!-- Documents Tab -->
+                    <div class="documents-tab hidden">
+                        <!-- Content will be loaded dynamically -->
+                    </div>
+                    
+                    <!-- Notes Tab -->
+                    <div class="notes-tab hidden">
+                        <!-- Content will be loaded dynamically -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Bottom Navigation (Mobile Only) -->
+    <nav class="bottom-nav fixed bottom-0 left-0 right-0 bg-gray-800/90 shadow-lg flex items-center justify-around md:hidden z-20">
+        <div class="flex justify-around items-center w-full max-w-md mx-auto py-2">
+            <a href="index.html" class="bottom-nav-icon-btn text-gray-400 hover:text-white" title="Home">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7m-9 2v10a1 1 0 001 1h4a1 1 0 001-1V12m-4-2h4" />
+                </svg>
+            </a>
+            <a href="order.html" class="bottom-nav-icon-btn text-gray-400 hover:text-white" title="Order">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+            </a>
+            <a href="inventory.html" class="bottom-nav-icon-btn text-gray-400 hover:text-white" title="Inventory">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 13H5v6a2 2 0 002 2h10a2 2 0 002-2v-6m-7-2V3m0 0L9 7m3-4l3 4" />
+                </svg>
+            </a>
+            <a href="carprofile.html" class="bottom-nav-icon-btn text-blue-400" title="Car Profile">
+                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
+                </svg>
+            </a>
+        </div>
+    </nav>
+
+    <script src="../assets/js/carprofile.js"></script>
+    <script>
+        // Theme toggle
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.classList.toggle('dark', prefersDark);
+        
+        document.getElementById('theme-toggle')?.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,4 @@
+{
+    "java.compile.nullAnalysis.mode": "disabled",
+    "cmake.sourceDirectory": "/Users/kiviro/Documents/Carigar/GoGreen/linux"
+}

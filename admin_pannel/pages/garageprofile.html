@@ -1,0 +1,2478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garage Profile Manager - Carigar</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary-color: #64748b;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --background-color: #f8fafc;
+            --surface-color: #ffffff;
+            --border-color: #e2e8f0;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            padding: 40px 0;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            background: var(--surface-color);
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 16px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            border-radius: 8px;
+            color: var(--text-secondary);
+        }
+
+        .tab.active {
+            background: var(--primary-color);
+            color: white;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .tab:hover:not(.active) {
+            background: var(--background-color);
+            color: var(--text-primary);
+        }
+
+        .content {
+            background: var(--surface-color);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-color);
+        }
+
+        .form-section {
+            display: none;
+        }
+
+        .form-section.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 32px;
+        }
+
+        .form-group h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .form-field {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            font-size: 0.875rem;
+        }
+
+        .required::after {
+            content: " *";
+            color: var(--danger-color);
+        }
+
+        input, select, textarea {
+            padding: 12px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: var(--surface-color);
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-top: 12px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            background: var(--background-color);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .checkbox-item:hover {
+            border-color: var(--primary-color);
+            background: rgba(37, 99, 235, 0.05);
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-right: 12px;
+            accent-color: var(--primary-color);
+        }
+
+        .photo-upload {
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: var(--background-color);
+        }
+
+        .photo-upload:hover {
+            border-color: var(--primary-color);
+            background: rgba(37, 99, 235, 0.05);
+        }
+
+        .photo-upload.dragover {
+            border-color: var(--primary-color);
+            background: rgba(37, 99, 235, 0.1);
+        }
+
+        .photo-upload i {
+            font-size: 3rem;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .photo-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .photo-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .photo-item img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+        }
+
+        .photo-remove {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        /* Offline indicator styles */
+        .offline-profile {
+            border-left: 4px solid #f59e0b;
+            background: rgba(245, 158, 11, 0.05);
+        }
+
+        .offline-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #f59e0b;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-left: 8px;
+        }
+
+        .offline-badge i {
+            font-size: 0.7rem;
+        }
+
+        /* Connection status styles */
+        .connection-status {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .connection-status.connected {
+            color: #10b981;
+        }
+
+        .connection-status.offline {
+            color: #f59e0b;
+        }
+
+        .connection-status.error {
+            color: #ef4444;
+        }
+
+        .connection-status i {
+            font-size: 0.75rem;
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .success-message {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            border: 1px solid #a7f3d0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            border: 1px solid #fecaca;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .warning-message {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            border: 1px solid #fde68a;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .profile-card {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s ease;
+        }
+
+        .profile-card:hover {
+            box-shadow: var(--shadow-md);
+            border-color: var(--primary-color);
+        }
+
+        .profile-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .profile-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .profile-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .profile-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+        }
+
+        .detail-item {
+            background: var(--background-color);
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-value {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .profile-photos {
+            margin-top: 20px;
+        }
+
+        .profile-photos h4 {
+            margin-bottom: 12px;
+            color: var(--text-secondary);
+        }
+
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 8px;
+        }
+
+        .photo-grid img {
+            width: 100%;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .photo-grid img:hover {
+            transform: scale(1.05);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .search-bar {
+            margin-bottom: 24px;
+        }
+
+        .search-bar input {
+            width: 100%;
+            max-width: 400px;
+            padding: 12px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--surface-color);
+            padding: 24px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Pricing Styles */
+        .pricing-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+
+        .pricing-tab {
+            padding: 12px 20px;
+            border: none;
+            background: var(--background-color);
+            color: var(--text-secondary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pricing-tab.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .pricing-tab:hover:not(.active) {
+            background: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .pricing-section {
+            display: none;
+        }
+
+        .pricing-section.active {
+            display: block;
+        }
+
+        .pricing-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .pricing-header h4 {
+            margin: 0;
+            color: var(--text-primary);
+        }
+
+        .pricing-table-container {
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--surface-color);
+        }
+
+        .pricing-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        .pricing-table th {
+            background: var(--background-color);
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: 600;
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        .pricing-table td {
+            padding: 12px 8px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+
+        .pricing-table tbody tr:hover {
+            background: var(--background-color);
+        }
+
+        .price-input {
+            width: 80px;
+            padding: 6px 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            text-align: center;
+            font-size: 0.875rem;
+        }
+
+        .price-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+        }
+
+        .service-name-input {
+            width: 150px;
+            padding: 6px 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 0.875rem;
+        }
+
+        .service-name-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+        }
+
+        .pricing-actions {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.75rem;
+        }
+
+        .pricing-summary {
+            background: var(--background-color);
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .pricing-summary h5 {
+            margin: 0 0 12px 0;
+            color: var(--text-primary);
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+        }
+
+        .summary-stat {
+            text-align: center;
+            padding: 8px;
+            background: var(--surface-color);
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+
+        .summary-stat-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .summary-stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .checkbox-group {
+                grid-template-columns: 1fr;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+            
+            .profile-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            
+            .profile-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-tools"></i> Garage Profile Manager</h1>
+            <p>Comprehensive automotive service center management system</p>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('add')">
+                <i class="fas fa-plus"></i> Add New Profile
+            </div>
+            <div class="tab" onclick="showTab('view')">
+                <i class="fas fa-list"></i> View Profiles
+            </div>
+        </div>
+
+        <div class="content">
+            <div id="successMessage" class="success-message" style="display: none;">
+                <i class="fas fa-check-circle"></i>
+                <span>Profile saved successfully!</span>
+            </div>
+
+            <div id="errorMessage" class="error-message" style="display: none;">
+                <i class="fas fa-exclamation-circle"></i>
+                <span id="errorText"></span>
+            </div>
+
+            <div id="offlineIndicator" class="warning-message" style="display: none;">
+                <i class="fas fa-desktop"></i>
+                <span>Working in offline mode. Data will be stored locally.</span>
+                <button class="btn btn-sm btn-primary" onclick="testSupabaseConnectivity()" style="margin-left: 10px;">
+                    <i class="fas fa-sync"></i> Try Online
+                </button>
+            </div>
+
+            <!-- Add Profile Form -->
+            <div id="addSection" class="form-section active">
+                <form id="garageForm">
+                    <div class="form-group">
+                        <h3><i class="fas fa-info-circle"></i> Basic Information</h3>
+                        <div class="form-row">
+                            <div class="form-field">
+                                <label for="garageName" class="required">Garage Name</label>
+                                <input type="text" id="garageName" name="garageName" required>
+                            </div>
+                            <div class="form-field">
+                                <label for="location">Location/Address</label>
+                                <input type="text" id="location" name="location">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-field">
+                                <label for="phone">Phone Number</label>
+                                <input type="tel" id="phone" name="phone">
+                            </div>
+                            <div class="form-field">
+                                <label for="email">Email</label>
+                                <input type="email" id="email" name="email">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-field">
+                                <label for="operatingHours">Operating Hours</label>
+                                <input type="text" id="operatingHours" name="operatingHours" placeholder="e.g., 9 AM - 7 PM">
+                            </div>
+                            <div class="form-field">
+                                <label for="mechanicExperience">Mechanic Experience</label>
+                                <textarea id="mechanicExperience" name="mechanicExperience" rows="3" placeholder="e.g., 2 partners and 3 mechs, all work, ac and wireman on contracts"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <h3><i class="fas fa-cogs"></i> Services Available</h3>
+                        <div class="checkbox-group">
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="generalWork" name="services" value="General mechanical work">
+                                <label for="generalWork">General Mechanical Work</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="acService" name="services" value="AC service">
+                                <label for="acService">AC Service</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="electrical" name="services" value="Electrical/wiring">
+                                <label for="electrical">Electrical/Wiring</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="denting" name="services" value="Denting/painting">
+                                <label for="denting">Denting/Painting</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="engine" name="services" value="Engine work">
+                                <label for="engine">Engine Work</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="suspension" name="services" value="Suspension">
+                                <label for="suspension">Suspension</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="gearbox" name="services" value="Gearbox">
+                                <label for="gearbox">Gearbox</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="transmission" name="services" value="Transmission">
+                                <label for="transmission">Transmission</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="regularService" name="services" value="Regular service">
+                                <label for="regularService">Regular Service</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <h3><i class="fas fa-building"></i> Facility Features</h3>
+                        <div class="form-row">
+                            <div class="form-field">
+                                <label for="customerLounge">Customer Lounge</label>
+                                <select id="customerLounge" name="customerLounge">
+                                    <option value="false">No</option>
+                                    <option value="true">Yes</option>
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label for="cctvWorking">CCTV Security</label>
+                                <select id="cctvWorking" name="cctvWorking">
+                                    <option value="true">Working</option>
+                                    <option value="false">Not Working</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-field">
+                                <label for="parkingInside">Car Parking Inside</label>
+                                <input type="number" id="parkingInside" name="parkingInside" min="0" placeholder="Number of spaces">
+                            </div>
+                            <div class="form-field">
+                                <label for="parkingOutside">Car Parking Outside</label>
+                                <input type="number" id="parkingOutside" name="parkingOutside" min="0" placeholder="Number of spaces">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-field">
+                                <label for="infrastructure">Infrastructure Notes</label>
+                                <textarea id="infrastructure" name="infrastructure" rows="3"></textarea>
+                            </div>
+                            <div class="form-field">
+                                <label for="employeeTraining">Training to Employees</label>
+                                <select id="employeeTraining" name="employeeTraining">
+                                    <option value="false">No</option>
+                                    <option value="true">Yes</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <h3><i class="fas fa-credit-card"></i> Business Operations</h3>
+                        <div class="form-row">
+                            <div class="form-field">
+                                <label for="paymentMethods">Payment Methods</label>
+                                <div class="checkbox-group">
+                                    <div class="checkbox-item">
+                                        <input type="checkbox" id="paymentCash" name="paymentMethods" value="Cash">
+                                        <label for="paymentCash">Cash</label>
+                                    </div>
+                                    <div class="checkbox-item">
+                                        <input type="checkbox" id="paymentCard" name="paymentMethods" value="Card">
+                                        <label for="paymentCard">Card</label>
+                                    </div>
+                                    <div class="checkbox-item">
+                                        <input type="checkbox" id="paymentCheque" name="paymentMethods" value="Cheque">
+                                        <label for="paymentCheque">Cheque</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-field">
+                                <label for="oilSupply">Oil Supply Method</label>
+                                <select id="oilSupply" name="oilSupply">
+                                    <option value="Gallon cans">Gallon Cans</option>
+                                    <option value="Bottled">Bottled</option>
+                                    <option value="Bulk storage">Bulk Storage</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-field">
+                                <label for="sparePartsInventory">Spare Parts Inventory</label>
+                                <select id="sparePartsInventory" name="sparePartsInventory">
+                                    <option value="false">No</option>
+                                    <option value="true">Yes</option>
+                                </select>
+                            </div>
+                            <div class="form-field">
+                                <label for="insuranceCashless">Cashless Insurance</label>
+                                <select id="insuranceCashless" name="insuranceCashless">
+                                    <option value="false">Not Available</option>
+                                    <option value="true">Available</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-field">
+                                <label for="insurancePreference">Insurance Preference</label>
+                                <textarea id="insurancePreference" name="insurancePreference" rows="2" placeholder="List preferred insurers or 'No preference'"></textarea>
+                            </div>
+                            <div class="form-field">
+                                <label for="additionalNotes">Additional Notes</label>
+                                <textarea id="additionalNotes" name="additionalNotes" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <h3><i class="fas fa-camera"></i> Photos</h3>
+                        <div class="photo-upload" id="photoUpload" onclick="document.getElementById('photoInput').click()">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Click to upload photos or drag and drop</p>
+                            <p style="font-size: 0.875rem; color: var(--text-secondary);">Supports JPG, PNG, GIF (Max 5MB each)</p>
+                        </div>
+                        <input type="file" id="photoInput" multiple accept="image/*" style="display: none;">
+                        <div class="photo-preview" id="photoPreview"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <h3><i class="fas fa-tags"></i> Pricing Information</h3>
+                        <div class="pricing-tabs">
+                            <button type="button" class="pricing-tab active" onclick="showPricingTab('garage')">
+                                <i class="fas fa-tools"></i> Garage Services
+                            </button>
+                            <button type="button" class="pricing-tab" onclick="showPricingTab('bodyshop')">
+                                <i class="fas fa-car"></i> Bodyshop Work
+                            </button>
+                        </div>
+
+                        <!-- Garage Services Pricing -->
+                        <div id="garagePricing" class="pricing-section active">
+                            <div class="pricing-header">
+                                <h4>Garage Service Pricing</h4>
+                                <button type="button" class="btn btn-sm btn-primary" onclick="addGarageService()">
+                                    <i class="fas fa-plus"></i> Add Service
+                                </button>
+                            </div>
+                            <div class="pricing-table-container">
+                                <table class="pricing-table" id="garagePricingTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Service</th>
+                                            <th>Small Cars<br>(Alto, Zen, Wagonr)</th>
+                                            <th>Medium Cars<br>(Swift, Dzire, i10)</th>
+                                            <th>Large Cars<br>(Polo, Vento, i20)</th>
+                                            <th>Luxury Cars<br>(BMW, MB, Audi)</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="garagePricingBody">
+                                        <!-- Dynamic content -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Bodyshop Work Pricing -->
+                        <div id="bodyshopPricing" class="pricing-section">
+                            <div class="pricing-header">
+                                <h4>Bodyshop Work Pricing</h4>
+                                <button type="button" class="btn btn-sm btn-primary" onclick="addBodyshopService()">
+                                    <i class="fas fa-plus"></i> Add Service
+                                </button>
+                            </div>
+                            <div class="pricing-table-container">
+                                <table class="pricing-table" id="bodyshopPricingTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Service</th>
+                                            <th>Small Cars</th>
+                                            <th>Medium Cars</th>
+                                            <th>Large Cars</th>
+                                            <th>Luxury Cars</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="bodyshopPricingBody">
+                                        <!-- Dynamic content -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="btn-group">
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <i class="fas fa-save"></i> Save Profile
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                                <i class="fas fa-undo"></i> Reset Form
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- View Profiles -->
+            <div id="viewSection" class="form-section">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                    <div>
+                        <h3><i class="fas fa-list"></i> Saved Garage Profiles</h3>
+                        <div id="connectionStatus" class="connection-status">
+                            <i class="fas fa-circle"></i> Checking connection...
+                </div>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-success" onclick="exportData()">
+                            <i class="fas fa-download"></i> Export Data
+                        </button>
+                        <button class="btn btn-secondary" onclick="refreshProfiles()">
+                            <i class="fas fa-sync"></i> Refresh
+                        </button>
+                        <button class="btn btn-primary" onclick="syncOfflineData()" id="syncButton">
+                            <i class="fas fa-cloud-upload-alt"></i> Sync Offline Data
+                        </button>
+                        <button class="btn btn-secondary" onclick="testOfflineMode()" style="display: none;">
+                            <i class="fas fa-bug"></i> Test Offline Mode
+                        </button>
+                        <button class="btn btn-info" onclick="testAlternativeDNS()">
+                            <i class="fas fa-network-wired"></i> Test DNS
+                        </button>
+                        <button class="btn btn-warning" onclick="forceSupabaseConnection()">
+                            <i class="fas fa-bolt"></i> Force Connection
+                        </button>
+                </div>
+                </div>
+
+                <div class="search-bar">
+                    <input type="text" id="searchInput" placeholder="Search garage profiles..." onkeyup="filterProfiles()">
+                </div>
+
+                <div class="stats-grid" id="statsGrid" style="display: none;">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalProfiles">0</div>
+                        <div class="stat-label">Total Profiles</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="activeServices">0</div>
+                        <div class="stat-label">Active Services</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="withPhotos">0</div>
+                        <div class="stat-label">With Photos</div>
+                    </div>
+                </div>
+
+                <div id="profilesList">
+                    <div class="empty-state">
+                        <i class="fas fa-tools"></i>
+                        <h3>No profiles found</h3>
+                        <p>Start by adding your first garage profile</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://mtclazwwcsjwuqydxtzj.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im10Y2xhend3Y3Nqd3VxeWR4dHpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk3NTIzNzUsImV4cCI6MjA2NTMyODM3NX0.q-I1f6rr9E7XiloHLWZ3mBC963Sk5Zjt3lKneFLTqHA';
+
+        // Initialize Supabase client
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let garageProfiles = [];
+        let uploadedPhotos = [];
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            initializePhotoUpload();
+            checkNetworkConnectivity();
+            initializePricingTables();
+            
+            // Try to sync offline data if connection is available
+            setTimeout(async () => {
+                try {
+                    await syncOfflineData();
+                } catch (error) {
+                    console.log('Auto-sync failed, will retry later');
+                }
+            }, 2000);
+        });
+
+        async function checkNetworkConnectivity() {
+            updateConnectionStatus('checking', 'Checking network...');
+            
+            try {
+                // Test basic network connectivity
+                const testResponse = await fetch('https://httpbin.org/get', { 
+                    method: 'GET',
+                    mode: 'cors',
+                    timeout: 5000 
+                });
+                
+                if (!testResponse.ok) {
+                    throw new Error('Network connectivity test failed');
+                }
+                
+                console.log('Network connectivity confirmed');
+                updateConnectionStatus('connected', 'Network connected');
+                
+                // Now test Supabase specifically
+                await testSupabaseConnectivity();
+                
+            } catch (error) {
+                console.error('Network connectivity issue:', error);
+                updateConnectionStatus('error', 'Network error - using offline mode');
+                showError('Network connectivity issue. Please check your internet connection and try again.');
+                
+                // Show offline mode message
+                const profilesList = document.getElementById('profilesList');
+                if (profilesList) {
+                    profilesList.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-wifi-slash"></i>
+                            <h3>Network Connection Issue</h3>
+                            <p>Unable to connect to the database. Please check your internet connection.</p>
+                            <button class="btn btn-primary" onclick="checkNetworkConnectivity()">
+                                <i class="fas fa-sync"></i> Retry Connection
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        function updateConnectionStatus(status, message) {
+            const statusElement = document.getElementById('connectionStatus');
+            if (statusElement) {
+                statusElement.className = `connection-status ${status}`;
+                statusElement.innerHTML = `<i class="fas fa-circle"></i> ${message}`;
+            }
+        }
+
+        async function testSupabaseConnectivity() {
+            updateConnectionStatus('checking', 'Testing Supabase...');
+            
+            try {
+                console.log('Testing Supabase connectivity...');
+                
+                // Test if we can reach the Supabase domain
+                const supabaseTest = await fetch('https://mtclazwwcsjwuqydxtzj.supabase.co/rest/v1/', {
+                    method: 'GET',
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    },
+                    timeout: 10000
+                });
+                
+                console.log('Supabase connectivity confirmed');
+                updateConnectionStatus('connected', 'Supabase connected');
+                loadProfiles();
+                
+            } catch (error) {
+                console.error('Supabase connectivity issue:', error);
+                updateConnectionStatus('offline', 'Supabase offline - using local storage');
+                
+                // Show specific Supabase connectivity error
+                const profilesList = document.getElementById('profilesList');
+                if (profilesList) {
+                    profilesList.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-database"></i>
+                            <h3>Supabase Connection Issue</h3>
+                            <p>The application cannot connect to the Supabase database. This could be due to:</p>
+                            <ul style="text-align: left; margin: 20px 0; max-width: 400px;">
+                                <li>DNS resolution issues with Supabase domain</li>
+                                <li>Network firewall blocking the connection</li>
+                                <li>Supabase service temporarily unavailable</li>
+                                <li>Corporate network restrictions</li>
+                            </ul>
+                            <div class="btn-group">
+                                <button class="btn btn-primary" onclick="testSupabaseConnectivity()">
+                                    <i class="fas fa-sync"></i> Retry Supabase
+                                </button>
+                                <button class="btn btn-secondary" onclick="showOfflineMode()">
+                                    <i class="fas fa-desktop"></i> Offline Mode
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Also show error message
+                showError('Supabase connection failed. You can continue working in offline mode.');
+            }
+        }
+
+        function showOfflineMode() {
+            const profilesList = document.getElementById('profilesList');
+            if (profilesList) {
+                profilesList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-desktop"></i>
+                        <h3>Offline Mode</h3>
+                        <p>You can still add new garage profiles, but they will be stored locally until the connection is restored.</p>
+                        <div class="btn-group">
+                            <button class="btn btn-primary" onclick="enableOfflineMode()">
+                                <i class="fas fa-check"></i> Enable Offline Mode
+                            </button>
+                            <button class="btn btn-secondary" onclick="testSupabaseConnectivity()">
+                                <i class="fas fa-wifi"></i> Try Connection Again
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function enableOfflineMode() {
+            // Switch to localStorage-based mode
+            console.log('Enabling offline mode with localStorage');
+            
+            // Load profiles from localStorage
+            const localProfiles = JSON.parse(localStorage.getItem('garageProfiles')) || [];
+            garageProfiles = localProfiles;
+            displayProfiles();
+            updateStats();
+            
+            // Show offline mode indicator
+            const offlineIndicator = document.getElementById('offlineIndicator');
+            if (offlineIndicator) {
+                offlineIndicator.style.display = 'flex';
+            }
+            
+            // Show success message
+            showSuccessMessage('Offline mode enabled. Data will be stored locally.');
+            
+            // Update the form to use localStorage
+            document.getElementById('garageForm').addEventListener('submit', handleOfflineSubmit);
+        }
+
+        async function saveToLocalStorage(profile) {
+            console.log('Saving profile to localStorage:', profile);
+            console.log('Garage name:', profile.garage_name || profile.garageName);
+            
+            // Ensure we have the correct garage name field
+            if (profile.garageName && !profile.garage_name) {
+                profile.garage_name = profile.garageName;
+            }
+            
+            // Add metadata for offline storage
+            profile.id = Date.now().toString();
+            profile.created_at = new Date().toISOString();
+            profile.updated_at = new Date().toISOString();
+            profile.is_offline = true; // Mark as offline for later sync
+
+            // Save to localStorage
+            garageProfiles.push(profile);
+            localStorage.setItem('garageProfiles', JSON.stringify(garageProfiles));
+            
+            console.log('Profile saved to localStorage successfully');
+            showSuccessMessage('Profile saved locally. Will sync when connection is restored.');
+            resetForm();
+            displayProfiles();
+        }
+
+        function updateSyncButtonVisibility() {
+            const syncButton = document.getElementById('syncButton');
+            if (syncButton) {
+                const localProfiles = JSON.parse(localStorage.getItem('garageProfiles')) || [];
+                const offlineProfiles = localProfiles.filter(profile => profile.is_offline);
+                
+                if (offlineProfiles.length > 0) {
+                    syncButton.style.display = 'inline-flex';
+                    syncButton.innerHTML = `<i class="fas fa-cloud-upload-alt"></i> Sync Offline Data (${offlineProfiles.length})`;
+                } else {
+                    syncButton.style.display = 'none';
+                }
+            }
+        }
+
+        function testOfflineMode() {
+            console.log('Testing offline mode...');
+            
+            // Create a test profile
+            const testProfile = {
+                garage_name: 'Test Garage (Offline)',
+                location: 'Test Location',
+                phone: '123-456-7890',
+                email: 'test@garage.com',
+                is_offline: true,
+                id: Date.now().toString(),
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+            
+            // Save to localStorage
+            garageProfiles.push(testProfile);
+            localStorage.setItem('garageProfiles', JSON.stringify(garageProfiles));
+            
+            showSuccessMessage('Test profile saved to localStorage. Check the profiles list.');
+            displayProfiles();
+        }
+
+        async function testAlternativeDNS() {
+            console.log('Testing alternative DNS resolution...');
+            
+            const dnsServers = [
+                '8.8.8.8', // Google DNS
+                '1.1.1.1', // Cloudflare DNS
+                '208.67.222.222' // OpenDNS
+            ];
+            
+            for (const dns of dnsServers) {
+                try {
+                    console.log(`Testing with DNS: ${dns}`);
+                    // This is a simplified test - in reality, DNS changes need to be done at system level
+                    const response = await fetch(`https://mtclazwwcsjwuqydxtzj.supabase.co/rest/v1/`, {
+                        method: 'GET',
+                        headers: {
+                            'apikey': SUPABASE_ANON_KEY,
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                        },
+                        timeout: 5000
+                    });
+                    
+                    if (response.ok) {
+                        showSuccessMessage(`✅ Supabase connection successful! DNS resolution working.`);
+                        updateConnectionStatus('connected', 'Supabase connected');
+                        return true;
+                    }
+                } catch (error) {
+                    console.log(`DNS ${dns} failed:`, error.message);
+                }
+            }
+            
+            showError('❌ All DNS tests failed. Please try network-level solutions.');
+            return false;
+        }
+
+        async function forceSupabaseConnection() {
+            console.log('Attempting to force Supabase connection...');
+            
+            try {
+                // Try different connection methods
+                const methods = [
+                    {
+                        name: 'Direct HTTPS',
+                        url: 'https://mtclazwwcsjwuqydxtzj.supabase.co/rest/v1/',
+                        headers: {
+                            'apikey': SUPABASE_ANON_KEY,
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                        }
+                    },
+                    {
+                        name: 'Simple GET',
+                        url: 'https://mtclazwwcsjwuqydxtzj.supabase.co/rest/v1/',
+                        headers: {}
+                    }
+                ];
+                
+                for (const method of methods) {
+                    try {
+                        console.log(`Trying ${method.name}...`);
+                        const response = await fetch(method.url, {
+                            method: 'GET',
+                            headers: method.headers,
+                            timeout: 10000
+                        });
+                        
+                        if (response.ok) {
+                            showSuccessMessage(`✅ Supabase connection successful via ${method.name}!`);
+                            updateConnectionStatus('connected', 'Supabase connected');
+                            return true;
+                        }
+                    } catch (error) {
+                        console.log(`${method.name} failed:`, error.message);
+                    }
+                }
+                
+                showError('❌ All connection methods failed. DNS resolution issue detected.');
+                return false;
+                
+            } catch (error) {
+                console.error('Force connection failed:', error);
+                showError('❌ Connection test failed. Please try network-level solutions.');
+                return false;
+            }
+        }
+
+        async function syncOfflineData() {
+            const localProfiles = JSON.parse(localStorage.getItem('garageProfiles')) || [];
+            const offlineProfiles = localProfiles.filter(profile => profile.is_offline);
+            
+            if (offlineProfiles.length === 0) {
+                showSuccessMessage('No offline data to sync.');
+                return;
+            }
+
+            const syncButton = document.getElementById('syncButton');
+            const originalText = syncButton.innerHTML;
+            
+            try {
+                syncButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
+                syncButton.disabled = true;
+                
+                console.log(`Syncing ${offlineProfiles.length} offline profiles...`);
+                
+                for (const profile of offlineProfiles) {
+                    // Remove offline flag and temporary ID
+                    const { is_offline, id: tempId, ...profileData } = profile;
+                    
+                    // Upload to Supabase
+                    const { data, error } = await supabase
+                        .from('garage_profiles')
+                        .insert([profileData]);
+
+                    if (error) {
+                        console.error('Error syncing profile:', error);
+                        continue;
+                    }
+
+                    console.log('Profile synced successfully:', profileData.garage_name);
+                }
+
+                // Remove synced profiles from localStorage
+                const remainingProfiles = localProfiles.filter(profile => !profile.is_offline);
+                localStorage.setItem('garageProfiles', JSON.stringify(remainingProfiles));
+                
+                showSuccessMessage(`Successfully synced ${offlineProfiles.length} profiles to the database.`);
+                
+                // Reload profiles to show updated data
+                loadProfiles();
+                
+            } catch (error) {
+                console.error('Error syncing offline data:', error);
+                showError('Failed to sync offline data. Will retry later.');
+            } finally {
+                syncButton.innerHTML = originalText;
+                syncButton.disabled = false;
+            }
+        }
+
+        function handleOfflineSubmit(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const profile = {};
+            
+            // Get regular form fields
+            for (let [key, value] of formData.entries()) {
+                if (key !== 'services' && key !== 'paymentMethods') {
+                    profile[key] = value;
+                }
+            }
+            
+            // Get checkbox values
+            profile.services = Array.from(document.querySelectorAll('input[name="services"]:checked'))
+                .map(cb => cb.value);
+            
+            profile.payment_methods = Array.from(document.querySelectorAll('input[name="paymentMethods"]:checked'))
+                .map(cb => cb.value);
+
+            // Convert boolean strings to actual booleans
+            profile.customer_lounge = profile.customerLounge === 'true';
+            profile.cctv_working = profile.cctvWorking === 'true';
+            profile.employee_training = profile.employeeTraining === 'true';
+            profile.spare_parts_inventory = profile.sparePartsInventory === 'true';
+            profile.insurance_cashless = profile.insuranceCashless === 'true';
+
+            // Convert numbers
+            profile.parking_inside = parseInt(profile.parkingInside) || 0;
+            profile.parking_outside = parseInt(profile.parkingOutside) || 0;
+
+            // Handle photos
+            if (uploadedPhotos.length > 0) {
+                profile.photos = uploadedPhotos.map(photo => photo.preview);
+            } else {
+                profile.photos = [];
+            }
+
+            // Add pricing data
+            profile.garage_pricing = garagePricing;
+            profile.bodyshop_pricing = bodyshopPricing;
+
+            // Add metadata
+            profile.id = Date.now().toString();
+            profile.created_at = new Date().toISOString();
+            profile.updated_at = new Date().toISOString();
+
+            // Save to localStorage
+            garageProfiles.push(profile);
+            localStorage.setItem('garageProfiles', JSON.stringify(garageProfiles));
+            
+            showSuccessMessage('Profile saved locally. Will sync when connection is restored.');
+            resetForm();
+            displayProfiles();
+        }
+
+        function showTab(tabName) {
+            // Hide all sections
+            document.querySelectorAll('.form-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected section and tab
+            if (tabName === 'add') {
+                document.getElementById('addSection').classList.add('active');
+                document.querySelector('.tab').classList.add('active');
+            } else if (tabName === 'view') {
+                document.getElementById('viewSection').classList.add('active');
+                document.querySelectorAll('.tab')[1].classList.add('active');
+                displayProfiles();
+            }
+        }
+
+        function initializePhotoUpload() {
+            const photoUpload = document.getElementById('photoUpload');
+            const photoInput = document.getElementById('photoInput');
+
+            // Drag and drop functionality
+            photoUpload.addEventListener('dragover', (e) => {
+            e.preventDefault();
+                photoUpload.classList.add('dragover');
+            });
+
+            photoUpload.addEventListener('dragleave', () => {
+                photoUpload.classList.remove('dragover');
+            });
+
+            photoUpload.addEventListener('drop', (e) => {
+                e.preventDefault();
+                photoUpload.classList.remove('dragover');
+                const files = Array.from(e.dataTransfer.files);
+                handlePhotoFiles(files);
+            });
+
+            // File input change
+            photoInput.addEventListener('change', (e) => {
+                const files = Array.from(e.target.files);
+                handlePhotoFiles(files);
+            });
+        }
+
+        function handlePhotoFiles(files) {
+            files.forEach(file => {
+                if (file.type.startsWith('image/') && file.size <= 5 * 1024 * 1024) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        uploadedPhotos.push({
+                            file: file,
+                            preview: e.target.result
+                        });
+                        updatePhotoPreview();
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    showError('Please select valid image files (max 5MB each)');
+                }
+            });
+        }
+
+        function updatePhotoPreview() {
+            const preview = document.getElementById('photoPreview');
+            preview.innerHTML = '';
+
+            uploadedPhotos.forEach((photo, index) => {
+                const photoItem = document.createElement('div');
+                photoItem.className = 'photo-item';
+                photoItem.innerHTML = `
+                    <img src="${photo.preview}" alt="Preview">
+                    <button class="photo-remove" onclick="removePhoto(${index})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                preview.appendChild(photoItem);
+            });
+        }
+
+        function removePhoto(index) {
+            uploadedPhotos.splice(index, 1);
+            updatePhotoPreview();
+        }
+
+        async function uploadPhotos() {
+            const photoUrls = [];
+            
+            for (const photo of uploadedPhotos) {
+                try {
+                    const fileName = `garage_photos/${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+                    
+                    // Try to upload to Supabase storage
+                    const { data, error } = await supabase.storage
+                        .from('garage-photos')
+                        .upload(fileName, photo.file);
+
+                    if (error) {
+                        console.warn('Storage upload failed, using base64 fallback:', error);
+                        // Fallback: store as base64 in database
+                        photoUrls.push(photo.preview);
+                        continue;
+                    }
+
+                    const { data: { publicUrl } } = supabase.storage
+                        .from('garage-photos')
+                        .getPublicUrl(fileName);
+
+                    photoUrls.push(publicUrl);
+                } catch (error) {
+                    console.error('Photo upload error:', error);
+                    // Fallback: store as base64 in database
+                    photoUrls.push(photo.preview);
+                }
+            }
+
+            return photoUrls;
+        }
+
+        document.getElementById('garageForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+            
+            try {
+                submitBtn.innerHTML = '<span class="loading"></span> Saving...';
+                submitBtn.disabled = true;
+            
+            const formData = new FormData(this);
+            const profile = {};
+            
+            // Debug: Log all form data
+            console.log('Form data entries:');
+            for (let [key, value] of formData.entries()) {
+                console.log(`${key}: ${value}`);
+            }
+            
+            // Get regular form fields
+            for (let [key, value] of formData.entries()) {
+                if (key !== 'services' && key !== 'paymentMethods') {
+                    profile[key] = value;
+                }
+            }
+            
+            // Debug: Log the profile object
+            console.log('Profile object before processing:', profile);
+            
+            // Get checkbox values
+            profile.services = Array.from(document.querySelectorAll('input[name="services"]:checked'))
+                .map(cb => cb.value);
+            
+                profile.payment_methods = Array.from(document.querySelectorAll('input[name="paymentMethods"]:checked'))
+                .map(cb => cb.value);
+            
+                // Map camelCase to snake_case for database and remove camelCase fields
+                profile.garage_name = profile.garageName;
+                profile.operating_hours = profile.operatingHours;
+                profile.mechanic_experience = profile.mechanicExperience;
+                profile.additional_notes = profile.additionalNotes;
+                profile.insurance_preference = profile.insurancePreference;
+                profile.oil_supply = profile.oilSupply;
+                
+                // Convert boolean strings to actual booleans
+                profile.customer_lounge = profile.customerLounge === 'true';
+                profile.cctv_working = profile.cctvWorking === 'true';
+                profile.employee_training = profile.employeeTraining === 'true';
+                profile.spare_parts_inventory = profile.sparePartsInventory === 'true';
+                profile.insurance_cashless = profile.insuranceCashless === 'true';
+
+                // Convert numbers
+                profile.parking_inside = parseInt(profile.parkingInside) || 0;
+                profile.parking_outside = parseInt(profile.parkingOutside) || 0;
+                
+                // Remove camelCase fields to avoid duplicate column errors
+                delete profile.garageName;
+                delete profile.operatingHours;
+                delete profile.mechanicExperience;
+                delete profile.additionalNotes;
+                delete profile.insurancePreference;
+                delete profile.oilSupply;
+                delete profile.customerLounge;
+                delete profile.cctvWorking;
+                delete profile.employeeTraining;
+                delete profile.sparePartsInventory;
+                delete profile.insuranceCashless;
+                delete profile.parkingInside;
+                delete profile.parkingOutside;
+
+                // Upload photos if any
+                if (uploadedPhotos.length > 0) {
+                    profile.photos = await uploadPhotos();
+                } else {
+                    profile.photos = [];
+                }
+
+                // Temporarily exclude pricing data until we confirm the columns exist
+                // if (garagePricing && Array.isArray(garagePricing) && garagePricing.length > 0) {
+                //     profile.garage_pricing = garagePricing;
+                // }
+                // if (bodyshopPricing && Array.isArray(bodyshopPricing) && bodyshopPricing.length > 0) {
+                //     profile.bodyshop_pricing = bodyshopPricing;
+                // }
+
+                // Debug: Log final profile object
+                console.log('Final profile object before save:', profile);
+                console.log('Garage name in final object:', profile.garage_name || profile.garageName);
+
+                // Try to save to Supabase first
+                try {
+                    const { data, error } = await supabase
+                        .from('garage_profiles')
+                        .insert([profile]);
+
+                    if (error) throw error;
+
+                    showSuccessMessage('Garage profile saved successfully to database!');
+                    resetForm();
+                    loadProfiles();
+                    
+                } catch (supabaseError) {
+                    console.error('Supabase save error:', supabaseError);
+                    
+                    // Check if it's a network error - check both message and details
+                    const errorMessage = supabaseError.message || '';
+                    const errorDetails = supabaseError.details || '';
+                    const fullErrorText = errorMessage + ' ' + errorDetails;
+                    
+                    console.log('Error details:', { message: errorMessage, details: errorDetails });
+                    
+                    if (fullErrorText.includes('Failed to fetch') || 
+                        fullErrorText.includes('ERR_NAME_NOT_RESOLVED') ||
+                        fullErrorText.includes('NetworkError') ||
+                        fullErrorText.includes('fetch')) {
+                        
+                        console.log('Network error detected, saving to localStorage...');
+                        // Save to localStorage as fallback
+                        await saveToLocalStorage(profile);
+                        showSuccessMessage('Profile saved locally. Will sync to database when connection is restored.');
+                        
+                    } else {
+                        // Re-throw non-network errors
+                        throw supabaseError;
+                    }
+                }
+
+            } catch (error) {
+                console.error('Save error:', error);
+                showError(error.message || 'Failed to save profile');
+            } finally {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        async function loadProfiles() {
+            try {
+                console.log('Attempting to load profiles from Supabase...');
+                
+                const { data, error } = await supabase
+                    .from('garage_profiles')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    console.error('Supabase error:', error);
+                    throw new Error(`Database error: ${error.message}`);
+                }
+
+                console.log('Profiles loaded successfully:', data?.length || 0, 'profiles');
+                garageProfiles = data || [];
+                displayProfiles();
+                updateStats();
+                
+            } catch (error) {
+                console.error('Load error:', error);
+                
+                // Check if it's a network error
+                if (error.message.includes('Failed to fetch') || error.message.includes('ERR_NAME_NOT_RESOLVED')) {
+                    console.log('Network error detected, loading from localStorage...');
+                    
+                    // Load from localStorage as fallback
+                    const localProfiles = JSON.parse(localStorage.getItem('garageProfiles')) || [];
+                    garageProfiles = localProfiles;
+                    
+                    if (localProfiles.length > 0) {
+                        showSuccessMessage(`Loaded ${localProfiles.length} profiles from local storage. Connection will be restored when available.`);
+                        displayProfiles();
+                        updateStats();
+                    } else {
+                        showError('Network connectivity issue. Please check your internet connection and try again.');
+                        
+                        // Show offline mode with retry option
+                        const profilesList = document.getElementById('profilesList');
+                        if (profilesList) {
+                            profilesList.innerHTML = `
+                                <div class="empty-state">
+                                    <i class="fas fa-wifi-slash"></i>
+                                    <h3>Connection Issue</h3>
+                                    <p>Unable to connect to the database. This could be due to:</p>
+                                    <ul style="text-align: left; margin: 20px 0;">
+                                        <li>Internet connection issues</li>
+                                        <li>DNS resolution problems</li>
+                                        <li>Supabase service temporarily unavailable</li>
+                                    </ul>
+                                    <div class="btn-group">
+                                        <button class="btn btn-primary" onclick="loadProfiles()">
+                                            <i class="fas fa-sync"></i> Retry
+                                        </button>
+                                        <button class="btn btn-secondary" onclick="checkNetworkConnectivity()">
+                                            <i class="fas fa-wifi"></i> Test Connection
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    }
+                } else {
+                    showError(`Failed to load profiles: ${error.message}`);
+                }
+            }
+        }
+
+        function displayProfiles() {
+            const profilesList = document.getElementById('profilesList');
+            
+            // Update sync button visibility based on offline profiles
+            updateSyncButtonVisibility();
+            
+            if (garageProfiles.length === 0) {
+                profilesList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-tools"></i>
+                        <h3>No profiles found</h3>
+                        <p>Start by adding your first garage profile</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            garageProfiles.forEach(profile => {
+                const servicesText = profile.services && profile.services.length > 0 
+                    ? profile.services.join(', ') 
+                    : 'None specified';
+                
+                const paymentMethodsText = profile.payment_methods && profile.payment_methods.length > 0 
+                    ? profile.payment_methods.join(', ') 
+                    : 'None specified';
+
+                html += `
+                    <div class="profile-card ${profile.is_offline ? 'offline-profile' : ''}">
+                        <div class="profile-header">
+                            <div class="profile-name">
+                                ${profile.garage_name}
+                                ${profile.is_offline ? '<span class="offline-badge"><i class="fas fa-wifi-slash"></i> Offline</span>' : ''}
+                            </div>
+                            <div class="profile-actions">
+                                <button class="btn btn-danger" onclick="deleteProfile('${profile.id}')">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                        <div class="profile-details">
+                            <div class="detail-item">
+                                <div class="detail-label">Location</div>
+                                <div class="detail-value">${profile.location || 'Not specified'}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Phone</div>
+                                <div class="detail-value">${profile.phone || 'Not specified'}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Email</div>
+                                <div class="detail-value">${profile.email || 'Not specified'}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Operating Hours</div>
+                                <div class="detail-value">${profile.operating_hours || 'Not specified'}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Mechanic Experience</div>
+                                <div class="detail-value">${profile.mechanic_experience || 'Not specified'}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Services</div>
+                                <div class="detail-value">${servicesText}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Customer Lounge</div>
+                                <div class="detail-value">${profile.customer_lounge ? 'Yes' : 'No'}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">CCTV Security</div>
+                                <div class="detail-value">${profile.cctv_working ? 'Working' : 'Not Working'}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Payment Methods</div>
+                                <div class="detail-value">${paymentMethodsText}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Parking (Inside/Outside)</div>
+                                <div class="detail-value">${profile.parking_inside || 0} inside, ${profile.parking_outside || 0} outside</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Oil Supply</div>
+                                <div class="detail-value">${profile.oil_supply || 'Not specified'}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Insurance Cashless</div>
+                                <div class="detail-value">${profile.insurance_cashless ? 'Available' : 'Not Available'}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Created</div>
+                                <div class="detail-value">${new Date(profile.created_at).toLocaleString()}</div>
+                            </div>
+                        </div>
+                        ${profile.photos && profile.photos.length > 0 ? `
+                            <div class="profile-photos">
+                                <h4><i class="fas fa-camera"></i> Photos (${profile.photos.length})</h4>
+                                <div class="photo-grid">
+                                    ${profile.photos.map(photo => `
+                                        <img src="${photo}" alt="Garage photo" onclick="openPhotoModal('${photo}')">
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${profile.garage_pricing && profile.garage_pricing.length > 0 ? `
+                            <div class="profile-pricing">
+                                <h4><i class="fas fa-tags"></i> Garage Pricing (${profile.garage_pricing.length} services)</h4>
+                            </div>
+                        ` : ''}
+                        
+                        ${profile.bodyshop_pricing && profile.bodyshop_pricing.length > 0 ? `
+                            <div class="profile-pricing">
+                                <h4><i class="fas fa-car"></i> Bodyshop Pricing (${profile.bodyshop_pricing.length} services)</h4>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+            
+            profilesList.innerHTML = html;
+        }
+
+        function updateStats() {
+            const statsGrid = document.getElementById('statsGrid');
+            const totalProfiles = document.getElementById('totalProfiles');
+            const activeServices = document.getElementById('activeServices');
+            const withPhotos = document.getElementById('withPhotos');
+
+            if (garageProfiles.length > 0) {
+                statsGrid.style.display = 'grid';
+                totalProfiles.textContent = garageProfiles.length;
+                
+                const servicesCount = garageProfiles.reduce((count, profile) => {
+                    return count + (profile.services ? profile.services.length : 0);
+                }, 0);
+                activeServices.textContent = servicesCount;
+                
+                const photosCount = garageProfiles.filter(profile => 
+                    profile.photos && profile.photos.length > 0
+                ).length;
+                withPhotos.textContent = photosCount;
+            } else {
+                statsGrid.style.display = 'none';
+            }
+        }
+
+        function filterProfiles() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filteredProfiles = garageProfiles.filter(profile => 
+                profile.garage_name.toLowerCase().includes(searchTerm) ||
+                (profile.location && profile.location.toLowerCase().includes(searchTerm)) ||
+                (profile.phone && profile.phone.includes(searchTerm))
+            );
+            
+            // Update display with filtered results
+            const profilesList = document.getElementById('profilesList');
+            
+            if (filteredProfiles.length === 0) {
+                profilesList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-search"></i>
+                        <h3>No matching profiles</h3>
+                        <p>Try adjusting your search terms</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Re-display with filtered data
+            const originalProfiles = garageProfiles;
+            garageProfiles = filteredProfiles;
+                displayProfiles();
+            garageProfiles = originalProfiles;
+        }
+
+        async function deleteProfile(id) {
+            if (confirm('Are you sure you want to delete this profile? This action cannot be undone.')) {
+                try {
+                    const { error } = await supabase
+                        .from('garage_profiles')
+                        .delete()
+                        .eq('id', id);
+
+                    if (error) throw error;
+
+                    showSuccessMessage('Profile deleted successfully');
+                    loadProfiles();
+                } catch (error) {
+                    console.error('Delete error:', error);
+                    showError('Failed to delete profile');
+                }
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('garageForm').reset();
+            uploadedPhotos = [];
+            updatePhotoPreview();
+        }
+
+        function refreshProfiles() {
+            // Check if we're in offline mode
+            const localProfiles = JSON.parse(localStorage.getItem('garageProfiles')) || [];
+            if (localProfiles.length > 0) {
+                // Try to sync local data first
+                syncLocalData();
+            } else {
+                loadProfiles();
+            }
+        }
+
+        async function syncLocalData() {
+            try {
+                console.log('Attempting to sync local data...');
+                
+                const localProfiles = JSON.parse(localStorage.getItem('garageProfiles')) || [];
+                if (localProfiles.length === 0) {
+                    loadProfiles();
+                    return;
+                }
+
+                // Test Supabase connection
+                const { data, error } = await supabase
+                    .from('garage_profiles')
+                    .select('count')
+                    .limit(1);
+
+                if (error) throw error;
+
+                console.log('Supabase connection restored. Syncing local data...');
+                
+                // Upload local profiles to Supabase
+                for (const profile of localProfiles) {
+                    try {
+                        const { error: insertError } = await supabase
+                            .from('garage_profiles')
+                            .insert([profile]);
+                        
+                        if (insertError) {
+                            console.warn('Failed to sync profile:', profile.garage_name, insertError);
+                        }
+                    } catch (error) {
+                        console.warn('Error syncing profile:', profile.garage_name, error);
+                    }
+                }
+
+                // Clear localStorage after successful sync
+                localStorage.removeItem('garageProfiles');
+                
+                showSuccessMessage('Local data synced successfully!');
+                loadProfiles();
+                
+            } catch (error) {
+                console.error('Sync failed:', error);
+                showError('Failed to sync local data. Please try again later.');
+                
+                // Fall back to offline mode
+                enableOfflineMode();
+            }
+        }
+
+        function exportData() {
+            const dataStr = JSON.stringify(garageProfiles, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `garage_profiles_${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+        }
+
+        function showSuccessMessage(message = 'Profile saved successfully!') {
+            const successMessage = document.getElementById('successMessage');
+            successMessage.querySelector('span').textContent = message;
+            successMessage.style.display = 'flex';
+            setTimeout(() => {
+                successMessage.style.display = 'none';
+            }, 5000);
+        }
+
+        function showError(message) {
+            const errorMessage = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            errorText.textContent = message;
+            errorMessage.style.display = 'flex';
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 5000);
+        }
+
+        function openPhotoModal(photoUrl) {
+            // Create a simple modal for photo viewing
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.9);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+                cursor: pointer;
+            `;
+            
+            const img = document.createElement('img');
+            img.src = photoUrl;
+            img.style.cssText = `
+                max-width: 90%;
+                max-height: 90%;
+                object-fit: contain;
+                border-radius: 8px;
+            `;
+            
+            modal.appendChild(img);
+            document.body.appendChild(modal);
+            
+            modal.addEventListener('click', () => {
+                document.body.removeChild(modal);
+            });
+        }
+
+        // Pricing Management Functions
+        let garagePricing = [];
+        let bodyshopPricing = [];
+
+        function initializePricingTables() {
+            // Load existing pricing data
+            garagePricing = JSON.parse(localStorage.getItem('garagePricing')) || [];
+            bodyshopPricing = JSON.parse(localStorage.getItem('bodyshopPricing')) || [];
+            
+            // Start with default service names but empty prices
+            if (garagePricing.length === 0) {
+                garagePricing = [
+                    { id: 1, name: 'Only Scanning', small: 0, medium: 0, large: 0, luxury: 0 },
+                    { id: 2, name: 'Vehicle inspection on ramp and scan', small: 0, medium: 0, large: 0, luxury: 0 },
+                    { id: 3, name: 'Oil and oil filter change', small: 0, medium: 0, large: 0, luxury: 0 },
+                    { id: 4, name: 'General service Petrol', small: 0, medium: 0, large: 0, luxury: 0 },
+                    { id: 5, name: 'General service Diesel', small: 0, medium: 0, large: 0, luxury: 0 },
+                    { id: 6, name: 'Brake service F', small: 0, medium: 0, large: 0, luxury: 0 },
+                    { id: 7, name: 'Brake service F+R', small: 0, medium: 0, large: 0, luxury: 0 },
+                    { id: 8, name: 'Full Suspension F', small: 0, medium: 0, large: 0, luxury: 0 },
+                    { id: 9, name: 'Full Suspension R', small: 0, medium: 0, large: 0, luxury: 0 },
+                    { id: 10, name: 'Only Shock absorber F', small: 0, medium: 0, large: 0, luxury: 0 },
+                    { id: 11, name: 'Only Shock absorber R', small: 0, medium: 0, large: 0, luxury: 0 },
+                    { id: 12, name: 'Gearbox refit', small: 0, medium: 0, large: 0, luxury: 0 },
+                    { id: 13, name: 'Timing plus Water pump Diesel', small: 0, medium: 0, large: 0, luxury: 0 },
+                    { id: 14, name: 'EGR full cleanup', small: 0, medium: 0, large: 0, luxury: 0 },
+                    { id: 15, name: 'Diesel pump service labour', small: 0, medium: 0, large: 0, luxury: 0 },
+                    { id: 16, name: 'Radiator opening fitting', small: 0, medium: 0, large: 0, luxury: 0 },
+                    { id: 17, name: 'Half engine', small: 0, medium: 0, large: 0, luxury: 0 },
+                    { id: 18, name: 'Full engine', small: 0, medium: 0, large: 0, luxury: 0 }
+                ];
+            }
+            
+            if (bodyshopPricing.length === 0) {
+                bodyshopPricing = [
+                    { id: 1, name: 'Denting', small: 0, medium: 0, large: 0, luxury: 0 },
+                    { id: 2, name: 'Painting rate per panel', small: 0, medium: 0, large: 0, luxury: 0 },
+                    { id: 3, name: 'Complete overcoat', small: 0, medium: 0, large: 0, luxury: 0 }
+                ];
+            }
+            
+            renderPricingTables();
+        }
+
+        function showPricingTab(tab) {
+            // Hide all pricing sections
+            document.querySelectorAll('.pricing-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.pricing-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected section and tab
+            if (tab === 'garage') {
+                document.getElementById('garagePricing').classList.add('active');
+                document.querySelector('.pricing-tab').classList.add('active');
+            } else if (tab === 'bodyshop') {
+                document.getElementById('bodyshopPricing').classList.add('active');
+                document.querySelectorAll('.pricing-tab')[1].classList.add('active');
+            }
+        }
+
+        function addGarageService() {
+            const newService = {
+                id: Date.now(),
+                name: '',
+                small: 0,
+                medium: 0,
+                large: 0,
+                luxury: 0
+            };
+            
+            garagePricing.push(newService);
+            savePricingData();
+            renderPricingTables();
+        }
+
+        function addBodyshopService() {
+            const newService = {
+                id: Date.now(),
+                name: '',
+                small: 0,
+                medium: 0,
+                large: 0,
+                luxury: 0
+            };
+            
+            bodyshopPricing.push(newService);
+            savePricingData();
+            renderPricingTables();
+        }
+
+        function updatePricingService(type, id, field, value) {
+            const pricing = type === 'garage' ? garagePricing : bodyshopPricing;
+            const service = pricing.find(s => s.id === id);
+            
+            if (service) {
+                if (field === 'small' || field === 'medium' || field === 'large' || field === 'luxury') {
+                    service[field] = parseInt(value) || 0;
+                } else {
+                    service[field] = value;
+                }
+                
+                savePricingData();
+                updatePricingSummary();
+            }
+        }
+
+        function deletePricingService(type, id) {
+            if (confirm('Are you sure you want to delete this service?')) {
+                if (type === 'garage') {
+                    garagePricing = garagePricing.filter(s => s.id !== id);
+                } else {
+                    bodyshopPricing = bodyshopPricing.filter(s => s.id !== id);
+                }
+                
+                savePricingData();
+                renderPricingTables();
+            }
+        }
+
+        function savePricingData() {
+            localStorage.setItem('garagePricing', JSON.stringify(garagePricing));
+            localStorage.setItem('bodyshopPricing', JSON.stringify(bodyshopPricing));
+        }
+
+        function renderPricingTables() {
+            renderGaragePricingTable();
+            renderBodyshopPricingTable();
+            updatePricingSummary();
+        }
+
+        function renderGaragePricingTable() {
+            const tbody = document.getElementById('garagePricingBody');
+            if (!tbody) return;
+            
+            if (garagePricing.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                            <i class="fas fa-plus-circle" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
+                            <p>No garage services added yet.</p>
+                            <p style="font-size: 0.875rem;">Click "Add Service" to start adding your pricing.</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = garagePricing.map(service => `
+                <tr>
+                    <td>
+                        <input type="text" class="service-name-input" 
+                               value="${service.name}" 
+                               onchange="updatePricingService('garage', ${service.id}, 'name', this.value)"
+                               placeholder="Service name">
+                    </td>
+                    <td>
+                        <input type="number" class="price-input" 
+                               value="${service.small || ''}" 
+                               onchange="updatePricingService('garage', ${service.id}, 'small', this.value)"
+                               placeholder="0">
+                    </td>
+                    <td>
+                        <input type="number" class="price-input" 
+                               value="${service.medium || ''}" 
+                               onchange="updatePricingService('garage', ${service.id}, 'medium', this.value)"
+                               placeholder="0">
+                    </td>
+                    <td>
+                        <input type="number" class="price-input" 
+                               value="${service.large || ''}" 
+                               onchange="updatePricingService('garage', ${service.id}, 'large', this.value)"
+                               placeholder="0">
+                    </td>
+                    <td>
+                        <input type="number" class="price-input" 
+                               value="${service.luxury || ''}" 
+                               onchange="updatePricingService('garage', ${service.id}, 'luxury', this.value)"
+                               placeholder="0">
+                    </td>
+                    <td>
+                        <div class="pricing-actions">
+                            <button class="btn btn-sm btn-danger" onclick="deletePricingService('garage', ${service.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderBodyshopPricingTable() {
+            const tbody = document.getElementById('bodyshopPricingBody');
+            if (!tbody) return;
+            
+            if (bodyshopPricing.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-secondary);">
+                            <i class="fas fa-plus-circle" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
+                            <p>No bodyshop services added yet.</p>
+                            <p style="font-size: 0.875rem;">Click "Add Service" to start adding your pricing.</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = bodyshopPricing.map(service => `
+                <tr>
+                    <td>
+                        <input type="text" class="service-name-input" 
+                               value="${service.name}" 
+                               onchange="updatePricingService('bodyshop', ${service.id}, 'name', this.value)"
+                               placeholder="Service name">
+                    </td>
+                    <td>
+                        <input type="number" class="price-input" 
+                               value="${service.small || ''}" 
+                               onchange="updatePricingService('bodyshop', ${service.id}, 'small', this.value)"
+                               placeholder="0">
+                    </td>
+                    <td>
+                        <input type="number" class="price-input" 
+                               value="${service.medium || ''}" 
+                               onchange="updatePricingService('bodyshop', ${service.id}, 'medium', this.value)"
+                               placeholder="0">
+                    </td>
+                    <td>
+                        <input type="number" class="price-input" 
+                               value="${service.large || ''}" 
+                               onchange="updatePricingService('bodyshop', ${service.id}, 'large', this.value)"
+                               placeholder="0">
+                    </td>
+                    <td>
+                        <input type="number" class="price-input" 
+                               value="${service.luxury || ''}" 
+                               onchange="updatePricingService('bodyshop', ${service.id}, 'luxury', this.value)"
+                               placeholder="0">
+                    </td>
+                    <td>
+                        <div class="pricing-actions">
+                            <button class="btn btn-sm btn-danger" onclick="deletePricingService('bodyshop', ${service.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function updatePricingSummary() {
+            // This function is now empty as pricing summary has been removed
+        }
+
+        // Initialize
+            showTab('add');
+    </script>
+</body>
+</html>

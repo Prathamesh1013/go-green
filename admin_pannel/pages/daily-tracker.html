@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Tracker - Carigar</title>
+    <meta name="theme-color" content="#000000">
+    <meta name="description" content="Track daily leads, conversions, and service counts">
+    <script>
+        if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+    </script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link href="../assets/css/styles.css" rel="stylesheet">
+    <link href="../assets/css/look.css" rel="stylesheet">
+    <link href="../assets/css/dark-mode.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen">
+    <nav class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <h1 class="text-xl font-bold text-gray-900 dark:text-white">Daily Tracker</h1>
+            <div class="flex items-center gap-3">
+                <input id="date-input" type="date" class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100" />
+                <button id="today-btn" class="px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">Today</button>
+                <button id="refresh-btn" class="px-3 py-2 rounded-lg bg-blue-600 text-white">Refresh</button>
+                <button id="theme-toggle" class="px-2 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">Theme</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="p-6 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                <div class="text-sm opacity-90 uppercase tracking-wide">Daily Leads</div>
+                <div id="leads-count" class="text-4xl font-bold mt-2">0</div>
+                <div id="leads-sub" class="text-xs mt-1 opacity-90">Created today</div>
+            </div>
+            <div class="p-6 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 text-white">
+                <div class="text-sm opacity-90 uppercase tracking-wide">Conversions</div>
+                <div id="conversions-count" class="text-4xl font-bold mt-2">0</div>
+                <div id="conversions-sub" class="text-xs mt-1 opacity-90">Interactions marked completed</div>
+            </div>
+            <div class="p-6 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 text-white">
+                <div class="text-sm opacity-90 uppercase tracking-wide">Service Count</div>
+                <div id="services-count" class="text-4xl font-bold mt-2">0</div>
+                <div id="services-sub" class="text-xs mt-1 opacity-90">All interactions created today</div>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700">
+            <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Breakdown</h2>
+                <div class="text-sm text-gray-500 dark:text-gray-400" id="summary-date"></div>
+            </div>
+            <div id="breakdown" class="p-4 text-gray-800 dark:text-gray-100">
+                <div class="text-sm text-gray-500 dark:text-gray-400">Loading...</div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../assets/js/supabase.js"></script>
+    <script src="../assets/js/daily-tracker.js"></script>
+</body>
+</html>
+

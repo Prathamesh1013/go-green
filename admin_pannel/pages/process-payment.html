@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Process Payment - Carigar</title>
+    <link href="../assets/css/styles.css" rel="stylesheet">
+    <link href="../assets/css/look.css" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="../assets/js/supabase.js"></script>
+    <script type="module" src="../assets/js/process-payment.js"></script>
+
+    <script src="../assets/js/supabase.js"></script>
+    <script src="../assets/js/auth-middleware.js"></script>
+</head>
+<body class="bg-[#1e2636] min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-[#1e2636] border-b border-gray-700 sticky top-0 z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex justify-between items-center">
+                <a href="javascript:history.back()" class="text-gray-300 hover:text-white flex items-center gap-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    <span>Back</span>
+                </a>
+                <button onclick="savePaymentDetails()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Save & Complete
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 container mx-auto px-4 py-8">
+        <div class="max-w-6xl mx-auto">
+            <!-- Summary Section -->
+            <div class="bg-[#24283b] rounded-lg shadow-lg border border-gray-700 p-6 mb-6">
+                <h2 class="text-xl font-semibold text-white mb-4">Service Summary</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-gray-400">Customer</p>
+                        <p id="customer-name" class="text-white">Loading...</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-400">Vehicle</p>
+                        <p id="vehicle-details" class="text-white">Loading...</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-400">Service Date</p>
+                        <p id="service-date" class="text-white">Loading...</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-400">Total Amount</p>
+                        <p id="total-amount" class="text-white">Loading...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Combined Task and Vendor Details -->
+            <div class="bg-[#24283b] rounded-lg shadow-lg border border-gray-700 p-6 mb-6">
+                <h2 class="text-xl font-semibold text-white mb-4">Service Details & Vendor Information</h2>
+                <div id="tasks-container" class="space-y-6">
+                    <!-- Each category will be a separate section -->
+                    <!-- Tasks will be loaded here dynamically -->
+                </div>
+            </div>
+
+            <!-- Payment Details -->
+            <div class="bg-[#24283b] rounded-lg shadow-lg border border-gray-700 p-6">
+                <h2 class="text-xl font-semibold text-white mb-4">Payment Details</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Payment Mode -->
+                    <div class="bg-[#1e2636] rounded-lg p-4">
+                        <h3 class="text-lg font-medium text-white mb-3">Payment Mode</h3>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-1">Payment Status</label>
+                            <select id="customer-payment-status" class="w-full bg-[#1e2636] text-white rounded-lg border border-gray-600 px-3 py-2">
+                                <option value="Paid via Cash">Paid via Cash</option>
+                                <option value="Paid via UPI">Paid via UPI</option>
+                                <option value="Paid via Card">Paid via Card</option>
+                                <option value="Payment Pending">Payment Pending</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Profit Summary -->
+                    <div class="bg-[#1e2636] rounded-lg p-4">
+                        <h3 class="text-lg font-medium text-white mb-3">Profit Summary</h3>
+                        <div class="grid grid-cols-3 gap-4 text-white">
+                            <div>
+                                <p class="text-gray-400">Total Amount</p>
+                                <p id="total-revenue" class="text-xl">₹0.00</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-400">Total Cost</p>
+                                <p id="total-cost" class="text-xl">₹0.00</p>
+                            </div>
+                            <div>
+                                <p class="text-gray-400">Net Profit</p>
+                                <p id="net-profit" class="text-xl font-bold text-green-500">₹0.00</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html> 

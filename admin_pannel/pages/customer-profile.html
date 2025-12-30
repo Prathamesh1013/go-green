@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#000000">
+    <meta name="description" content="Customer Profile - Carigar">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Carigar">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icons/icon-152x152.png">
+    <title>Customer Profile - Carigar</title>
+    <script>
+        // Force dark theme
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+    </script>
+    <link href="../assets/css/styles.css" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/look.css">
+    <script src="../assets/js/supabase-db.js"></script>
+    <style>
+        body {
+            background-color: #0c0f17;
+            color: #e2e8f0;
+            font-family: 'DM Sans', sans-serif;
+        }
+        .vehicle-card {
+            background: linear-gradient(135deg, #1a2238 0%, #24283b 100%);
+            border: 1px solid #2d3748;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+        .vehicle-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+        .add-vehicle-btn {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            color: white;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .add-vehicle-btn:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            transform: translateY(-1px);
+        }
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .status-active {
+            background-color: #10b981;
+            color: white;
+        }
+        .status-inactive {
+            background-color: #6b7280;
+            color: white;
+        }
+        .status-pending {
+            background-color: #f59e0b;
+            color: white;
+        }
+        .customer-header {
+            background: linear-gradient(135deg, #1a2238 0%, #24283b 100%);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid #2d3748;
+        }
+        .vehicle-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+        .modal-content {
+            background-color: #1a2238;
+            margin: 5% auto;
+            padding: 2rem;
+            border: 1px solid #2d3748;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #e2e8f0;
+        }
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #2d3748;
+            border-radius: 6px;
+            background-color: #111827;
+            color: #e2e8f0;
+            font-size: 0.875rem;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+        }
+        .btn-secondary {
+            background-color: #6b7280;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background-color: #4b5563;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: #fff;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+    <script src="../assets/js/supabase.js"></script>
+    <script src="../assets/js/auth-middleware.js"></script>
+</head>
+<body class="bg-[#0c0f17] text-white">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="w-12 bg-[#0a0e14] flex flex-col items-center py-6 gap-6">
+            <div>
+                <img src="../icons/icon-192x192.png" alt="Carigar Logo" class="w-6 h-6">
+            </div>
+            <a href="index.html" class="sidebar-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+            </a>
+            <a href="customer-tracker.html" class="sidebar-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+            </a>
+            <a href="#" class="sidebar-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+            </a>
+            <a href="#" class="sidebar-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+            </a>
+            <a href="#" class="sidebar-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+            </a>
+            <a href="#" class="sidebar-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            </a>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Header -->
+            <div class="flex justify-between items-center py-4 px-6 border-b border-gray-800">
+                <div class="flex items-center gap-4">
+                    <button onclick="goBack()" class="p-2 text-gray-400 hover:text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+                    <h1 class="text-xl font-semibold text-white">Customer Profile</h1>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="editCustomer()" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg">
+                        Edit Customer
+                    </button>
+                    <button onclick="openAddVehicleModal()" class="add-vehicle-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Add Vehicle
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p class="mt-4 text-gray-400">Loading customer details...</p>
+            </div>
+
+            <!-- Customer Details -->
+            <div id="customer-content" class="flex-1 overflow-y-auto p-6" style="display: none;">
+                <!-- Customer Header -->
+                <div class="customer-header">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h2 id="customer-name" class="text-2xl font-bold text-white mb-2">Customer Name</h2>
+                            <div class="flex items-center gap-4 text-gray-300">
+                                <span id="customer-phone">Phone: N/A</span>
+                                <span id="customer-email">Email: N/A</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div id="customer-status" class="status-badge status-active mb-2">Active</div>
+                            <p class="text-sm text-gray-400">Customer since <span id="customer-since">N/A</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vehicles Section -->
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-white">Vehicles (<span id="vehicle-count">0</span>)</h3>
+                    </div>
+                    <div id="vehicles-container" class="vehicle-grid">
+                        <!-- Vehicles will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Service History Section -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold text-white mb-4">Recent Service History</h3>
+                    <div id="service-history" class="bg-[#1a2238] rounded-lg p-4 border border-gray-700">
+                        <!-- Service history will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Vehicle Modal -->
+    <div id="addVehicleModal" class="modal">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-semibold text-white">Add New Vehicle</h3>
+                <span class="close" onclick="closeAddVehicleModal()">&times;</span>
+            </div>
+            <form id="addVehicleForm">
+                <div id="addVehicleFields" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" onclick="closeAddVehicleModal()" class="btn-secondary">Cancel</button>
+                    <button type="submit" class="btn-primary">Add Vehicle</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentCustomer = null;
+        let supabaseClient = null;
+
+        const addVehicleFields = [
+            { id: 'registration_number', label: 'Registration Number *', type: 'text', required: true },
+            { id: 'make_model_year', label: 'Make / Model / Year', type: 'text' },
+            { id: 'fuel_type', label: 'Fuel Type', type: 'select', options: ['', 'petrol', 'diesel', 'cng', 'electric', 'hybrid'] },
+            { id: 'avg_monthly_run', label: 'Avg Monthly Run (km)', type: 'number' },
+            { id: 'workshop_preference', label: 'Workshop Preference', type: 'text' },
+            { id: 'year_of_registration', label: 'Year of Registration', type: 'number' },
+            { id: 'last_service_date', label: 'Last Service Date', type: 'date' },
+            { id: 'next_service_date', label: 'Next Service Date', type: 'date' },
+            { id: 'insurance_expiry', label: 'Insurance Expiry', type: 'date' },
+            { id: 'puc_expiry', label: 'PUC Expiry', type: 'date' },
+            { id: 'latest_odometer_reading', label: 'Latest Odometer', type: 'number' },
+            { id: 'color', label: 'Color', type: 'text' }
+        ];
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                renderAddVehicleForm();
+
+                // Initialize Supabase
+                if (!window.supabase && typeof window.initializeSupabaseClient === 'function') {
+                    window.initializeSupabaseClient();
+                }
+                if (window.supabase) {
+                    supabaseClient = window.supabase;
+                } else {
+                    throw new Error('Supabase client not available');
+                }
+                
+                // Get customer ID from URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const customerId = urlParams.get('id');
+                
+                if (!customerId) {
+                    showError('No customer ID provided');
+                    return;
+                }
+                
+                // Load customer data
+                await loadCustomerData(customerId);
+                
+                // Setup event listeners
+                setupEventListeners();
+                
+            } catch (error) {
+                console.error('Error initializing page:', error);
+                showError('Failed to initialize page');
+            }
+        });
+
+        // Load customer data
+        async function loadCustomerData(customerId) {
+            try {
+                showLoading();
+                
+                // Load customer and vehicles using shared DB utility
+                const customer = await window.CustomerDB.getCustomerById(customerId);
+                if (!customer) throw new Error('Customer not found');
+                
+                // Fetch recent interactions separately (avoid nested relation 400)
+                let interactions = [];
+                try {
+                    const vehicleIds = Array.isArray(customer.vehicles) ? customer.vehicles.map(v => v.vehicle_id).filter(Boolean) : [];
+                    if (vehicleIds.length > 0) {
+                        const { data: interactionsData, error: interactionsError } = await supabaseClient
+                            .from('interactions')
+                            .select('interaction_id, interaction_number, interaction_status, current_odometer_reading, pickup_date_time, primary_job, customer_note, total_amount, customer_payment_status, vendor_payment_status, delivery_date, created_at, vehicle_id')
+                            .in('vehicle_id', vehicleIds)
+                            .order('created_at', { ascending: false });
+                        if (!interactionsError && Array.isArray(interactionsData)) {
+                            interactions = interactionsData;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Failed to load interactions, continuing without history', e);
+                }
+                
+                currentCustomer = { ...customer, interactions };
+                displayCustomerDetails(currentCustomer);
+                
+            } catch (error) {
+                console.error('Error loading customer:', error);
+                showError('Failed to load customer details');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function renderAddVehicleForm() {
+            const container = document.getElementById('addVehicleFields');
+            if (!container) return;
+            container.innerHTML = addVehicleFields.map(field => {
+                if (field.type === 'select') {
+                    const options = field.options.map(option => {
+                        const label = option ? option.charAt(0).toUpperCase() + option.slice(1) : 'Select';
+                        return `<option value="${option}">${label}</option>`;
+                    }).join('');
+                    return `
+                        <div class="form-group">
+                            <label class="form-label" for="add-${field.id}">${field.label}</label>
+                            <select id="add-${field.id}" class="form-input">
+                                ${options}
+                            </select>
+                        </div>
+                    `;
+                }
+                return `
+                    <div class="form-group">
+                        <label class="form-label" for="add-${field.id}">${field.label}</label>
+                        <input type="${field.type}" id="add-${field.id}" class="form-input" ${field.required ? 'required' : ''}>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Display customer details
+        function displayCustomerDetails(customer) {
+            // Update customer header
+            document.getElementById('customer-name').textContent = customer.full_name || 'Unknown Customer';
+            document.getElementById('customer-phone').textContent = `Phone: ${customer.mobile_number || 'N/A'}`;
+            document.getElementById('customer-email').textContent = `Email: ${customer.email_id || 'N/A'}`;
+            
+            // Update customer status
+            const statusElement = document.getElementById('customer-status');
+            if (customer.vehicles && customer.vehicles.length > 0) {
+                statusElement.textContent = 'Active';
+                statusElement.className = 'status-badge status-active mb-2';
+            } else {
+                statusElement.textContent = 'No Vehicles';
+                statusElement.className = 'status-badge status-inactive mb-2';
+            }
+            
+            // Update customer since date
+            const customerSince = new Date(customer.created_at);
+            document.getElementById('customer-since').textContent = customerSince.toLocaleDateString();
+            
+            // Display vehicles
+            displayVehicles(customer.vehicles || []);
+            
+            // Display service history
+            displayServiceHistory(customer.interactions || []);
+            
+            // Show content
+            document.getElementById('customer-content').style.display = 'block';
+        }
+
+        const getField = (vehicle, candidates = []) => {
+            for (const key of candidates) {
+                if (vehicle[key] !== undefined && vehicle[key] !== null && vehicle[key] !== '') {
+                    return vehicle[key];
+                }
+            }
+            return null;
+        };
+
+        const getVehicleTitle = (vehicle) => {
+            const make = getField(vehicle, ['make', 'vehicle_make']);
+            const model = getField(vehicle, ['model', 'vehicle_model']);
+            const combined = getField(vehicle, ['make_model_year']);
+            if (make || model) {
+                return `${make || ''} ${model || ''}`.trim() || combined || 'Vehicle';
+            }
+            return combined || getField(vehicle, ['registration_number']) || 'Vehicle';
+        };
+
+        const getVehicleYear = (vehicle) => {
+            return getField(vehicle, ['year', 'year_of_registration']);
+        };
+
+        const getVehicleColor = (vehicle) => {
+            return getField(vehicle, ['color', 'vehicle_color']);
+        };
+
+        // Display vehicles
+        function displayVehicles(vehicles) {
+            const container = document.getElementById('vehicles-container');
+            const countElement = document.getElementById('vehicle-count');
+            
+            countElement.textContent = vehicles.length;
+            
+            if (vehicles.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-8 text-gray-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                        </svg>
+                        <p>No vehicles found</p>
+                        <p class="text-sm">Click "Add Vehicle" to get started</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = vehicles.map(vehicle => `
+                <div class="vehicle-card" onclick="viewVehicle('${vehicle.vehicle_id}')">
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <h4 class="text-lg font-semibold text-white">${getVehicleTitle(vehicle)}</h4>
+                            <p class="text-sm text-gray-400">${getField(vehicle, ['registration_number', 'vehicle_number']) || 'No Registration'}</p>
+                        </div>
+                        <div class="text-right">
+                            <div class="status-badge ${getVehicleStatusClass(vehicle)}">${getVehicleStatus(vehicle)}</div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                            <span class="text-gray-400">Year:</span>
+                            <span class="text-white ml-1">${getVehicleYear(vehicle) || 'N/A'}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-400">Fuel:</span>
+                            <span class="text-white ml-1">${vehicle.fuel_type || 'N/A'}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-400">Color:</span>
+                            <span class="text-white ml-1">${getVehicleColor(vehicle) || 'N/A'}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-400">Odometer:</span>
+                            <span class="text-white ml-1">${vehicle.latest_odometer_reading || 'N/A'}</span>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-gray-600">
+                        <div class="flex justify-between text-xs text-gray-400">
+                            <span>Insurance: ${formatDate(vehicle.insurance_expiry)}</span>
+                            <span>PUC: ${formatDate(vehicle.puc_expiry)}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Display service history
+        function displayServiceHistory(interactions) {
+            const container = document.getElementById('service-history');
+            
+            if (interactions.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-center py-4">No service history found</p>';
+                return;
+            }
+            
+            // Sort by date (most recent first)
+            const sortedInteractions = interactions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            
+            container.innerHTML = sortedInteractions.slice(0, 5).map(interaction => `
+                <div class="flex justify-between items-center py-2 border-b border-gray-600 last:border-b-0">
+                    <div>
+                        <p class="text-white font-medium">${interaction.primary_job || 'Service'}</p>
+                        <p class="text-sm text-gray-400">${interaction.interaction_number || 'N/A'}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-400">${formatDate(interaction.created_at)}</p>
+                        <p class="text-sm font-medium text-white">₹${interaction.total_amount || '0'}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Add vehicle form submission
+            document.getElementById('addVehicleForm').addEventListener('submit', handleAddVehicle);
+        }
+
+        // Handle add vehicle form submission
+        async function handleAddVehicle(event) {
+            event.preventDefault();
+            
+            try {
+                const vehicleData = {
+                    customer_id: currentCustomer.customer_id,
+                    created_at: new Date().toISOString()
+                };
+
+                addVehicleFields.forEach(field => {
+                    const input = document.getElementById(`add-${field.id}`);
+                    if (!input) return;
+                    const rawValue = (input.value ?? '').trim();
+                    if (rawValue === '') {
+                        vehicleData[field.id] = null;
+                        return;
+                    }
+                    if (field.type === 'number') {
+                        const parsed = parseInt(rawValue, 10);
+                        vehicleData[field.id] = Number.isNaN(parsed) ? null : parsed;
+                    } else {
+                        vehicleData[field.id] = rawValue;
+                    }
+                });
+
+                if (!vehicleData.registration_number) {
+                    showError('Registration number is required');
+                    return;
+                }
+                
+                const { data, error } = await supabaseClient
+                    .from('vehicles')
+                    .insert([vehicleData])
+                    .select()
+                    .single();
+                
+                if (error) throw error;
+                
+                // Add to current customer's vehicles
+                currentCustomer.vehicles.push(data);
+                
+                // Refresh display
+                displayVehicles(currentCustomer.vehicles);
+                
+                // Close modal and reset form
+                closeAddVehicleModal();
+                event.target.reset();
+                
+                showSuccess('Vehicle added successfully!');
+                
+            } catch (error) {
+                console.error('Error adding vehicle:', error);
+                if (error?.details || error?.message) {
+                    console.error('Supabase error details:', error.details || error.message, error.hint || '');
+                }
+                showError(error?.message || 'Failed to add vehicle');
+            }
+        }
+
+        // Open add vehicle modal
+        function openAddVehicleModal() {
+            document.getElementById('addVehicleModal').style.display = 'block';
+        }
+
+        // Close add vehicle modal
+        function closeAddVehicleModal() {
+            document.getElementById('addVehicleModal').style.display = 'none';
+            document.getElementById('addVehicleForm').reset();
+        }
+
+        // View vehicle details
+        function viewVehicle(vehicleId) {
+            window.location.href = `carprofile.html?id=${vehicleId}`;
+        }
+
+        // Edit customer
+        function editCustomer() {
+            if (currentCustomer) {
+                window.location.href = `new-customer.html?id=${currentCustomer.customer_id}&edit=true`;
+            }
+        }
+
+        // Go back
+        function goBack() {
+            window.history.back();
+        }
+
+        // Utility functions
+        function getVehicleStatus(vehicle) {
+            if (vehicle.status === 'active') return 'Active';
+            if (vehicle.status === 'inactive') return 'Inactive';
+            if (vehicle.status === 'pending_service') return 'Service Due';
+            return 'Unknown';
+        }
+
+        function getVehicleStatusClass(vehicle) {
+            if (vehicle.status === 'active') return 'status-active';
+            if (vehicle.status === 'inactive') return 'status-inactive';
+            if (vehicle.status === 'pending_service') return 'status-pending';
+            return 'status-inactive';
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            return date.toLocaleDateString();
+        }
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('customer-content').style.display = 'none';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function showError(message) {
+            alert('Error: ' + message);
+        }
+
+        function showSuccess(message) {
+            alert('Success: ' + message);
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('addVehicleModal');
+            if (event.target === modal) {
+                closeAddVehicleModal();
+            }
+        }
+    </script>
+</body>
+</html>
+
